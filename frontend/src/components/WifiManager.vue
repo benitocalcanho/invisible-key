@@ -11,6 +11,33 @@
       <button @click="loadStatus" class="btn-sm">Refresh</button>
     </div>
 
+    <!-- Nearby networks -->
+    <div class="section-card">
+      <div class="section-head">
+        <div>
+          <h4>Nearby Networks</h4>
+          <p class="hint">Scan visible WiFi networks, select one, then enter the password below.</p>
+        </div>
+        <button @click="scanNetworks" :disabled="scanning" class="btn-sm">
+          {{ scanning ? 'Scanning...' : 'Scan' }}
+        </button>
+      </div>
+
+      <p v-if="scanError" class="error">{{ scanError }}</p>
+      <p v-else-if="scanned.length === 0" class="hint">No scan results yet.</p>
+      <ul v-else class="scan-dropdown">
+        <li
+          v-for="network in scanned"
+          :key="`${network.ssid}-${network.security}`"
+          :class="{ selected: newSsid === network.ssid }"
+          @click="selectNetwork(network.ssid)"
+        >
+          <span>{{ network.ssid }}</span>
+          <span class="meta">{{ network.signal }}% · {{ network.security }}</span>
+        </li>
+      </ul>
+    </div>
+
     <!-- Saved networks -->
     <div class="section-card">
       <h4>Saved Networks</h4>
@@ -60,9 +87,15 @@
         <input v-model="newPass" type="text" placeholder="WiFi password (min 8 characters)" />
       </div>
 
-      <button @click="addNetwork" :disabled="adding" class="btn-primary">
-        {{ adding ? $t('saving') : 'Save Credentials' }}
-      </button>
+      <div class="button-row">
+        <button @click="addNetwork" :disabled="adding || connectingNow" class="btn-primary">
+          {{ adding ? $t('saving') : 'Save Credentials' }}
+        </button>
+        <button @click="connectNow" :disabled="adding || connectingNow" class="btn-secondary">
+          {{ connectingNow ? 'Connecting...' : 'Connect Now' }}
+        </button>
+      </div>
+      <p class="hint action-hint">Connecting now may briefly interrupt this page while the Pi switches networks.</p>
       <p v-if="addError" class="error">{{ addError }}</p>
       <p v-if="addSuccess" class="success">{{ addSuccess }}</p>
     </div>
@@ -76,14 +109,18 @@ import api from '../api.js'
 
 const status = ref({ state: 'unknown', connection: '', device: '' })
 const saved = ref([])
+const scanned = ref([])
 const newSsid = ref('')
 const newPass = ref('')
 const adding = ref(false)
 const connecting = ref(null)
 const deleting = ref(null)
+const scanning = ref(false)
+const connectingNow = ref(false)
 const addError = ref('')
 const addSuccess = ref('')
 const actionError = ref('')
+const scanError = ref('')
 
 onMounted(() => {
   loadStatus()
@@ -102,6 +139,26 @@ async function loadSaved() {
     const { data } = await api.get('/wifi/admin/saved')
     saved.value = data
   } catch { /* best effort */ }
+}
+
+async function scanNetworks() {
+  scanning.value = true
+  scanError.value = ''
+  try {
+    const { data } = await api.get('/wifi/admin/scan')
+    scanned.value = data
+  } catch (e) {
+    scanError.value = e.response?.data?.error || 'Failed to scan networks.'
+    scanned.value = []
+  } finally {
+    scanning.value = false
+  }
+}
+
+function selectNetwork(ssid) {
+  newSsid.value = ssid
+  addError.value = ''
+  addSuccess.value = ''
 }
 
 
@@ -123,6 +180,31 @@ async function addNetwork() {
     addError.value = e.response?.data?.error || 'Failed to save.'
   } finally {
     adding.value = false
+  }
+}
+
+async function connectNow() {
+  addError.value = ''
+  addSuccess.value = ''
+  if (!newSsid.value.trim() || !newPass.value) {
+    addError.value = 'SSID and password are required.'
+    return
+  }
+  connectingNow.value = true
+  try {
+    const { data } = await api.post('/wifi/connect', { ssid: newSsid.value.trim(), passphrase: newPass.value })
+    if (data.status === 'error') {
+      throw new Error(data.message || 'Failed to connect.')
+    }
+    addSuccess.value = `Connected to "${newSsid.value.trim()}".`
+    newSsid.value = ''
+    newPass.value = ''
+    await loadStatus()
+    await loadSaved()
+  } catch (e) {
+    addError.value = e.response?.data?.error || e.message || 'Failed to connect.'
+  } finally {
+    connectingNow.value = false
   }
 }
 
@@ -182,6 +264,8 @@ async function deleteSaved(name) {
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 .section-card h4 { margin: 0 0 0.5rem; color: #0f3460; font-size: 1rem; }
+.section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.button-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .saved-list { list-style: none; margin: 0 0 0.5rem; padding: 0; }
 .saved-list li {
@@ -219,7 +303,8 @@ async function deleteSaved(name) {
   border-bottom: 1px solid #f0f0f0;
 }
 .scan-dropdown li:last-child { border-bottom: none; }
-.scan-dropdown li:hover { background: #f5f7fa; }
+.scan-dropdown li:hover, .scan-dropdown li.selected { background: #f5f7fa; }
+.scan-dropdown li.selected span:first-child { font-weight: 700; }
 .meta { font-size: 0.78rem; color: #888; }
 
 .btn-primary {
@@ -227,6 +312,11 @@ async function deleteSaved(name) {
   border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
 }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary {
+  padding: 0.45rem 1rem; background: #eef2f7; color: #344054;
+  border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+}
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-sm {
   padding: 0.3rem 0.7rem; background: #e8ecf0; color: #333;
   border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem;
@@ -236,6 +326,7 @@ async function deleteSaved(name) {
 .btn-danger:hover { background: #f5c6c6; }
 
 .hint { color: #888; font-size: 0.82rem; margin: 0 0 0.75rem; }
+.action-hint { margin-top: 0.5rem; }
 .success { color: #27ae60; font-size: 0.88rem; margin: 0.4rem 0 0; }
 .error { color: #c0392b; font-size: 0.88rem; margin: 0.4rem 0 0; }
 </style>
