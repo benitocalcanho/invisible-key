@@ -9,10 +9,10 @@
           <th>{{ $t('audit_datetime') }}</th>
           <th>{{ $t('username') }}</th>
           <th>{{ $t('audit_event') }}</th>
-          <th>IP</th>
           <th>{{ $t('audit_device') }}</th>
           <th>{{ $t('audit_language') }}</th>
           <th>{{ $t('audit_detail') }}</th>
+          <th>IP</th>
         </tr>
       </thead>
       <tbody>
@@ -22,10 +22,10 @@
           <td>
             <span class="badge event-badge" :class="eventClass(entry.event)">{{ formatEvent(entry.event) }}</span>
           </td>
-          <td>{{ entry.ip_address }}</td>
           <td>{{ formatClient(entry) }}</td>
           <td>{{ getClientField(entry, 'language') }}</td>
           <td>{{ formatDetail(entry.detail) }}</td>
+          <td>{{ entry.ip_address }}</td>
         </tr>
       </tbody>
     </table>
