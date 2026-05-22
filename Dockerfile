@@ -46,6 +46,7 @@ WORKDIR /app
 # gcc        : needed to compile any Python C extensions (bcrypt, cryptography)
 # libffi-dev  : required by cffi (bcrypt dependency)
 # libc6-dev   : C stdlib headers required to compile cffi from source on armv7l
+# zlib/libjpeg/libwebp: required when Pillow builds from source on armv7
 # network-manager : provides nmcli for WiFi management via host NetworkManager (Pi)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
@@ -53,6 +54,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
     libc6-dev \
+    zlib1g-dev \
+    libjpeg62-turbo-dev \
+    libwebp-dev \
     network-manager \
     && rm -rf /var/lib/apt/lists/*
 
