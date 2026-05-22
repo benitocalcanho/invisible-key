@@ -201,7 +201,7 @@ const messages = {
     apartment_door: 'Apartment Door',
     push_door: 'Push door!',
     unlock_door: 'Unlock',
-    unlock_safety_notice: 'Do not unlock the doors unless you are physically there. Never unlock remotely.',
+    unlock_safety_notice: 'Warning! Do not unlock the doors unless you are physically there. Never unlock remotely.',
   },
   de: {
     app_name: 'Invisible Key',
@@ -386,7 +386,7 @@ const messages = {
     apartment_door: 'Wohnungstür',
     push_door: 'Tür drücken!',
     unlock_door: 'Öffnen',
-    unlock_safety_notice: 'Entriegeln Sie die Türen nur, wenn Sie vor Ort sind. Niemals aus der Ferne entriegeln.',
+    unlock_safety_notice: 'Achtung! Entriegeln Sie die Türen nur, wenn Sie vor Ort sind. Niemals aus der Ferne entriegeln.',
   },
   fr: {
     app_name: 'Invisible Key',
@@ -571,7 +571,7 @@ const messages = {
     apartment_door: 'Porte d\'appartement',
     push_door: 'Poussez la porte!',
     unlock_door: 'Ouvrir',
-    unlock_safety_notice: 'Ne déverrouillez pas les portes si vous n’êtes pas sur place. Ne déverrouillez jamais à distance.',
+    unlock_safety_notice: 'Attention ! Ne déverrouillez pas les portes si vous n’êtes pas sur place. Ne déverrouillez jamais à distance.',
   },
   es: {
     app_name: 'Invisible Key',
@@ -756,7 +756,7 @@ const messages = {
     apartment_door: 'Puerta del apartamento',
     push_door: '¡Empuje la puerta!',
     unlock_door: 'Abrir',
-    unlock_safety_notice: 'No desbloquee las puertas si no está físicamente allí. Nunca desbloquee a distancia.',
+    unlock_safety_notice: '¡Atención! No desbloquee las puertas si no está físicamente allí. Nunca desbloquee a distancia.',
   },
   it: {
     app_name: 'Invisible Key',
@@ -941,7 +941,7 @@ const messages = {
     apartment_door: 'Porta appartamento',
     push_door: 'Spingi la porta!',
     unlock_door: 'Apri',
-    unlock_safety_notice: 'Sblocca le porte solo se sei fisicamente sul posto. Non sbloccare mai da remoto.',
+    unlock_safety_notice: 'Attenzione! Sblocca le porte solo se sei fisicamente sul posto. Non sbloccare mai da remoto.',
   },
 };
 
@@ -1045,7 +1045,7 @@ messages.pt = {
   desc_ical: 'Cole a URL iCal privada do Google Calendar → Configurações → "Endereço secreto em formato iCal". Não são necessárias chaves de API. Um evento por dia = um convidado ativo.',
   welcome: 'Bem-vindo', unlock: 'Desbloquear', logout: 'Sair', sign_in: 'Entrar', signing_in: 'Entrando…', signout: 'Sair',
   building_door: 'Porta do prédio', apartment_door: 'Porta do apartamento', push_door: 'Empurre a porta!', unlock_door: 'Desbloquear',
-  unlock_safety_notice: 'Não desbloqueie as portas a menos que esteja fisicamente no local. Nunca desbloqueie remotamente.',
+  unlock_safety_notice: 'Atenção! Não desbloqueie as portas a menos que esteja fisicamente no local. Nunca desbloqueie remotamente.',
 }
 
 messages.tr = {
@@ -1065,7 +1065,7 @@ messages.tr = {
   save: 'Kaydet', saving: 'Kaydediliyor…', saved: 'Kaydedildi!', sync_now: 'Şimdi senkronize et', syncing: 'Senkronize ediliyor…', restarting: 'Yeniden başlatılıyor…', apply_schedule_changes: 'Program değişikliklerini uygula', sensor: 'Sensör', source: 'Kaynak', refreshing: 'Yenileniyor…', loading: 'Yükleniyor…', load_more_count: 'Daha fazla yükle ({shown}/{total})', not_set: 'Ayarlanmamış', not_configured: 'Yapılandırılmamış',
   guest_password_source: 'Misafir şifresi kaynağı', fixed_password: 'Sabit şifre (aşağıya yazın)', password_from_event: 'Etkinlik başlığının son kelimesi (örn. telefonun son 4 hanesi)', configure_new_pin: 'Yeni pin yapılandır', bcm_pin: 'BCM pin (2–27)', label_example: 'Etiket (örn. LED)', output: 'Çıkış', input: 'Giriş', add_pin: 'Pin ekle', toggle: 'Değiştir', input_badge: 'GİRİŞ', remove: 'Kaldır', on: 'AÇIK', off: 'KAPALI', no_gpio_pins: 'Yapılandırılmış GPIO pini yok.',
   section_ngrok: 'ngrok Tüneli', section_email: 'E-posta Bildirimleri', section_guest_password: 'Misafir Şifresi', section_schedule: 'Misafir Programı', section_cleaner: 'Temizlik Hesabı', section_calendar_rules: 'Takvim Kuralları', section_ical: 'Google Calendar (iCal — önerilir)', desc_ngrok: 'Pi cihazınızı internet üzerinden misafirlere açın. Tokenı dashboard.ngrok.com adresinden alın.', desc_email: 'Bildirim e-postaları için SMTP sunucusu ve alıcıyı yapılandırın. Bu ayarlar, kullanıcı düğmeye bastığında uyarı göndermek için kullanılır.', desc_guest_password: 'Takvim etkinliklerinden oluşturulan misafirlerin şifresinin nasıl atanacağını belirler.', desc_schedule: 'Günlük misafir check-out ve check-in saatleri. 24 saatlik HH:MM formatını kullanın (örn. 12:00 ve 14:00).', desc_cleaner: 'Temizlik kullanıcısı adını ve şifresini ayarlayın. Aynı anda yalnızca bir temizlik hesabı aktiftir. Rol her zaman "temizlik"tir.', desc_calendar_rules: 'Misafirlerin takvim etkinliklerinden nasıl oluşturulacağını kontrol eder.', desc_ical: 'Google Calendar → Ayarlar → "iCal biçiminde gizli adres" içindeki özel iCal URL’sini yapıştırın. API anahtarı gerekmez. Günde bir etkinlik = bir aktif misafir.',
-  welcome: 'Hoş geldiniz', unlock: 'Kilidi aç', logout: 'Çıkış', sign_in: 'Giriş yap', signing_in: 'Giriş yapılıyor…', signout: 'Çıkış', building_door: 'Bina kapısı', apartment_door: 'Daire kapısı', push_door: 'Kapıyı itin!', unlock_door: 'Kilidi aç', unlock_safety_notice: 'Fiziksel olarak orada değilseniz kapıların kilidini açmayın. Asla uzaktan kilit açmayın.',
+  welcome: 'Hoş geldiniz', unlock: 'Kilidi aç', logout: 'Çıkış', sign_in: 'Giriş yap', signing_in: 'Giriş yapılıyor…', signout: 'Çıkış', building_door: 'Bina kapısı', apartment_door: 'Daire kapısı', push_door: 'Kapıyı itin!', unlock_door: 'Kilidi aç', unlock_safety_notice: 'Dikkat! Fiziksel olarak orada değilseniz kapıların kilidini açmayın. Asla uzaktan kilit açmayın.',
 }
 
 const userLocale = navigator.language.split('-')[0];

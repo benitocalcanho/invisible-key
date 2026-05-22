@@ -2,8 +2,6 @@
   <div class="guest-page">
     <!-- Floating sign-out button -->
     <button class="signout-btn" @click="logout">{{ $t('signout') }}</button>
-    <div class="safety-banner">{{ $t('unlock_safety_notice') }}</div>
-
     <div class="door-card">
       <img
         v-if="imageUrl('building_door')"
@@ -151,7 +149,7 @@ function progressAttr(door) {
   position: fixed;
   top: 0.9rem;
   right: 1rem;
-  z-index: 220;
+  z-index: 200;
   background: rgba(0,0,0,0.45);
   color: white;
   border: 1px solid rgba(255,255,255,0.3);
@@ -162,24 +160,6 @@ function progressAttr(door) {
   backdrop-filter: blur(4px);
 }
 
-.safety-banner {
-  position: fixed;
-  top: 3.8rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 210;
-  width: min(92vw, 560px);
-  background: rgba(255, 244, 229, 0.96);
-  color: #7a3b00;
-  border: 1px solid rgba(255, 215, 166, 0.95);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 800;
-  line-height: 1.3;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.22);
-}
 
 .door-card {
   flex: 1;
