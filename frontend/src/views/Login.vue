@@ -1,13 +1,14 @@
 <template>
   <div class="login-view">
     <h1>{{ $t('sign_in') }}</h1>
+    <p class="safety-notice">{{ $t('unlock_safety_notice') }}</p>
     <form @submit.prevent="handleLogin">
       <div class="field">
           <label for="username">{{ $t('username') }}</label>
         <input id="username" v-model="username" required />
       </div>
       <div class="field">
-          <label for="password">Password</label>
+          <label for="password">{{ $t('password') }}</label>
         <input id="password" v-model="password" type="password" autocomplete="current-password" required />
       </div>
       <p v-if="error" class="error">{{ error }}</p>
@@ -85,5 +86,16 @@ button {
 }
 button:hover:not(:disabled) { background: #16213e; }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
+.safety-notice {
+  background: #fff4e5;
+  color: #7a3b00;
+  border: 1px solid #ffd7a6;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  margin: 0.75rem 0 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
 .error { color: #e74c3c; font-size: 0.88rem; margin-bottom: 0.5rem; }
 </style>
