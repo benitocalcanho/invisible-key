@@ -106,7 +106,7 @@
     <!-- Email tab -->
     <section v-if="tab === 'email'">
       <h3>{{ $t('section_email') }}</h3>
-      <p class="hint">Configure SMTP server and recipient for notification emails. These settings are used to send alerts when a user presses a button.</p>
+      <p class="hint">{{ $t('desc_email') }}</p>
       <SettingsPanel :onlySection="'email'" />
     </section>
 

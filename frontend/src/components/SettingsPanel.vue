@@ -34,7 +34,7 @@
           <!-- All other fields -->
           <template v-else>
             <label>
-              {{ schema[key]?.label }}
+              {{ settingLabel(key) }}
               <span v-if="!values[key]?.is_set" class="badge-unset">{{ $t('not_set') }}</span>
             </label>
             <textarea
@@ -193,6 +193,10 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+function settingLabel(key) {
+  return schema.value[key]?.label || key
+}
 
 function inputPlaceholder(key) {
   const val = values.value[key]
