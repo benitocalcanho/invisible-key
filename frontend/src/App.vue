@@ -1,19 +1,22 @@
 <template>
   <div id="app">
     <!-- Language switcher removed: now auto-detects browser language -->
-    <NavBar v-if="authStore.isLoggedIn && authStore.user?.role !== 'guest'" />
-    <main :class="['main-content', authStore.user?.role === 'guest' ? 'guest' : '']">
+    <NavBar v-if="authStore.isLoggedIn && !isGuestRoute" />
+    <main :class="['main-content', isGuestRoute ? 'guest' : '']">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import NavBar from './components/NavBar.vue'
 import { useAuthStore } from './stores/auth.js'
 
 const authStore = useAuthStore()
+const route = useRoute()
+const isGuestRoute = computed(() => route.path === '/guest')
 
 onMounted(async () => {
   // Restore session if a token exists in localStorage
