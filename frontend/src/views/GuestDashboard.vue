@@ -141,7 +141,6 @@ function progressAttr(door) {
 .door-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -150,12 +149,12 @@ function progressAttr(door) {
 }
 
 .door-label {
-  color: rgba(255,255,255,0.85);
+  color: white;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.85);
 }
 
 .unlock-btn {
