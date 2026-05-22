@@ -145,12 +145,66 @@
       <h3>{{ $t('tab_doors') }}</h3>
       <p class="hint">Upload background photos shown on the guest dashboard door cards.</p>
 
+      <div class="preview-mode-row">
+        <span class="mode-label">{{ $t('preview_shape') }}</span>
+        <button
+          v-for="mode in previewModes"
+          :key="mode.key"
+          class="btn-sm"
+          :class="{ active: previewMode === mode.key }"
+          @click="previewMode = mode.key"
+        >
+          {{ $t(mode.labelKey) }}
+        </button>
+      </div>
+
       <div class="door-upload-grid">
         <div v-for="door in doorSlots" :key="door.key" class="door-slot">
           <h4>{{ $t(door.labelKey) }}</h4>
-          <div class="door-preview" :style="doorImages[door.key] ? `background-image:url('${doorImages[door.key]}?t=${cacheBust}')` : ''">
-            <span v-if="!doorImages[door.key]" class="no-img">{{ $t('no_image_uploaded') }}</span>
+          <div
+            class="door-preview guest-door-card"
+            :class="previewMode"
+            @pointerdown="startImageDrag(door.key, $event)"
+            @pointermove="dragImage(door.key, $event)"
+            @pointerup="stopImageDrag"
+            @pointercancel="stopImageDrag"
+          >
+            <img
+              v-if="imageUrl(door.key)"
+              class="door-preview-image"
+              :src="imageUrl(door.key) + '?t=' + cacheBust"
+              :style="imageStyle(door.key)"
+              alt=""
+              draggable="false"
+            />
+            <span v-if="!imageUrl(door.key)" class="no-img">{{ $t('no_image_uploaded') }}</span>
+            <div v-if="imageUrl(door.key)" class="preview-overlay">
+              <p class="preview-door-label">{{ $t(door.labelKey) }}</p>
+              <button class="preview-unlock-btn" type="button">{{ $t('unlock_door') }}</button>
+            </div>
           </div>
+
+          <div v-if="imageUrl(door.key)" class="image-controls">
+            <label>
+              {{ $t('horizontal') }}
+              <input v-model.number="doorImages[door.key].position_x" type="range" min="0" max="100" step="1" />
+            </label>
+            <label>
+              {{ $t('vertical') }}
+              <input v-model.number="doorImages[door.key].position_y" type="range" min="0" max="100" step="1" />
+            </label>
+            <label>
+              {{ $t('zoom') }}
+              <input v-model.number="doorImages[door.key].zoom" type="range" min="1" max="2" step="0.01" />
+            </label>
+            <div class="btn-row compact">
+              <button class="btn-sm" @click="resetImageDisplay(door.key)">{{ $t('reset') }}</button>
+              <button class="btn-primary" @click="saveImageDisplay(door.key)" :disabled="savingImageDisplay === door.key">
+                {{ savingImageDisplay === door.key ? $t('saving') : $t('save_position') }}
+              </button>
+            </div>
+          </div>
+
           <label class="upload-label">
             <input type="file" accept="image/*" @change="uploadDoorImage(door.key, $event)" />
             {{ $t('choose_photo') }}
@@ -266,6 +320,14 @@ const doorSlots = [
   { key: 'apartment_door', labelKey: 'apartment_door' },
 ]
 const doorImages = ref({ building_door: null, apartment_door: null })
+const savingImageDisplay = ref(null)
+const draggingImage = ref(null)
+const previewMode = ref('compact')
+const previewModes = [
+  { key: 'compact', labelKey: 'compact_phone' },
+  { key: 'tall', labelKey: 'tall_phone' },
+  { key: 'wide', labelKey: 'wide_phone' },
+]
 const doorUploadMsg = ref({ building_door: '', apartment_door: '' })
 const doorUploadErr = ref({ building_door: '', apartment_door: '' })
 const cacheBust = ref(Date.now())
@@ -306,10 +368,46 @@ watch(
   { immediate: true }
 )
 
+function normalizeDoorImage(value) {
+  if (!value || typeof value === 'string') {
+    return { url: value, position_x: 50, position_y: 50, zoom: 1 }
+  }
+  return {
+    url: value.url || null,
+    position_x: value.position_x ?? 50,
+    position_y: value.position_y ?? 50,
+    zoom: value.zoom ?? 1,
+  }
+}
+
+function normalizeDoorImages(data) {
+  return {
+    building_door: normalizeDoorImage(data?.building_door),
+    apartment_door: normalizeDoorImage(data?.apartment_door),
+  }
+}
+
+function imageEntry(key) {
+  return normalizeDoorImage(doorImages.value[key])
+}
+
+function imageUrl(key) {
+  return imageEntry(key).url
+}
+
+function imageStyle(key) {
+  const image = imageEntry(key)
+  return {
+    objectPosition: `${image.position_x}% ${image.position_y}%`,
+    transform: `scale(${image.zoom})`,
+    transformOrigin: `${image.position_x}% ${image.position_y}%`,
+  }
+}
+
 async function loadDoorImages() {
   try {
     const { data } = await api.get('/uploads/images')
-    doorImages.value = data
+    doorImages.value = normalizeDoorImages(data)
   } catch (_) {}
 }
 
@@ -324,12 +422,67 @@ async function uploadDoorImage(key, event) {
     const { data } = await api.post(`/uploads/images/${key}`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    doorImages.value[key] = data.url
+    doorImages.value[key] = normalizeDoorImage(data)
     cacheBust.value = Date.now()
-    doorUploadMsg.value[key] = 'Image uploaded successfully.'
+    doorUploadMsg.value[key] = t('image_uploaded')
     setTimeout(() => { doorUploadMsg.value[key] = '' }, 3000)
   } catch (e) {
-    doorUploadErr.value[key] = e.response?.data?.error || 'Upload failed.'
+    doorUploadErr.value[key] = e.response?.data?.error || t('upload_failed')
+  }
+}
+
+
+function resetImageDisplay(key) {
+  if (!doorImages.value[key]) return
+  doorImages.value[key] = { ...imageEntry(key), position_x: 50, position_y: 50, zoom: 1 }
+}
+
+async function saveImageDisplay(key) {
+  savingImageDisplay.value = key
+  doorUploadMsg.value[key] = ''
+  doorUploadErr.value[key] = ''
+  try {
+    const image = imageEntry(key)
+    const { data } = await api.patch(`/uploads/images/${key}/display`, {
+      position_x: image.position_x,
+      position_y: image.position_y,
+      zoom: image.zoom,
+    })
+    doorImages.value[key] = { ...image, ...data }
+    doorUploadMsg.value[key] = t('image_position_saved')
+    setTimeout(() => { doorUploadMsg.value[key] = '' }, 3000)
+  } catch (e) {
+    doorUploadErr.value[key] = e.response?.data?.error || t('image_position_save_failed')
+  } finally {
+    savingImageDisplay.value = null
+  }
+}
+
+function startImageDrag(key, event) {
+  if (!imageUrl(key)) return
+  draggingImage.value = key
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+  updateImagePositionFromPointer(key, event)
+}
+
+function dragImage(key, event) {
+  if (draggingImage.value !== key) return
+  updateImagePositionFromPointer(key, event)
+}
+
+function stopImageDrag() {
+  draggingImage.value = null
+}
+
+function updateImagePositionFromPointer(key, event) {
+  const rect = event.currentTarget.getBoundingClientRect()
+  const x = ((event.clientX - rect.left) / rect.width) * 100
+  const y = ((event.clientY - rect.top) / rect.height) * 100
+  const image = imageEntry(key)
+  doorImages.value[key] = {
+    ...image,
+    position_x: Math.max(0, Math.min(100, Math.round(x))),
+    position_y: Math.max(0, Math.min(100, Math.round(y))),
   }
 }
 
@@ -471,15 +624,45 @@ h2 { margin-bottom: 1.2rem; }
 .hint { color: #666; margin-bottom: 1rem; }
 .hint code { background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
 .mt { margin-top: 0.75rem; }
-.door-upload-grid { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-.door-slot { flex: 1; min-width: 260px; background: white; border-radius: 10px; padding: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.door-upload-grid { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+.door-slot { flex: 1; min-width: 280px; background: white; border-radius: 10px; padding: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .door-slot h4 { margin-bottom: 0.75rem; color: #0f3460; }
+.preview-mode-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.mode-label { color: #555; font-size: 0.88rem; font-weight: 600; }
+.btn-sm.active { background: #0f3460; color: white; }
 .door-preview {
-  width: 100%; height: 200px; border-radius: 6px; background: #e8eaf0;
-  background-size: cover; background-position: center;
+  width: 100%; max-width: 360px; margin: 0 auto 0.75rem;
+  border-radius: 8px; background: #e8eaf0;
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 0.75rem;
+  position: relative; overflow: hidden; touch-action: none;
+  cursor: grab; user-select: none;
 }
+.door-preview.compact { aspect-ratio: 9 / 8; }
+.door-preview.tall { aspect-ratio: 9 / 11; }
+.door-preview.wide { aspect-ratio: 9 / 6.5; }
+.door-preview:active { cursor: grabbing; }
+.door-preview-image {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; will-change: transform; pointer-events: none;
+}
+.preview-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1.2rem; pointer-events: none;
+}
+.preview-door-label {
+  color: white; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.85); margin: 0;
+}
+.preview-unlock-btn {
+  padding: 0.85rem 2.2rem; min-width: 170px; min-height: 50px;
+  font-size: 1.1rem; font-weight: 700; color: #0f3460;
+  background: rgba(255,255,255,0.93); border: none; border-radius: 50px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+.image-controls { display: grid; gap: 0.65rem; margin: 0.75rem 0 1rem; }
+.image-controls label { display: grid; gap: 0.25rem; color: #444; font-size: 0.85rem; font-weight: 600; }
+.image-controls input[type="range"] { width: 100%; }
+.btn-row.compact { margin-bottom: 0; }
 .no-img { color: #aaa; font-size: 0.85rem; }
 .upload-label {
   display: inline-block; padding: 0.45rem 1rem;

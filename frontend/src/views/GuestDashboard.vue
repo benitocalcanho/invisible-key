@@ -3,10 +3,14 @@
     <!-- Floating sign-out button -->
     <button class="signout-btn" @click="logout">{{ $t('signout') }}</button>
 
-    <div
-      class="door-card"
-      :style="images.building_door ? `background-image: url('${images.building_door}')` : ''"
-    >
+    <div class="door-card">
+      <img
+        v-if="imageUrl('building_door')"
+        class="door-image"
+        :src="imageUrl('building_door')"
+        :style="imageStyle('building_door')"
+        alt=""
+      />
       <div class="door-overlay">
         <p class="door-label">{{ $t('building_door') }}</p>
         <button
@@ -21,10 +25,14 @@
       </div>
     </div>
 
-    <div
-      class="door-card"
-      :style="images.apartment_door ? `background-image: url('${images.apartment_door}')` : ''"
-    >
+    <div class="door-card">
+      <img
+        v-if="imageUrl('apartment_door')"
+        class="door-image"
+        :src="imageUrl('apartment_door')"
+        :style="imageStyle('apartment_door')"
+        alt=""
+      />
       <div class="door-overlay">
         <p class="door-label">{{ $t('apartment_door') }}</p>
         <button
@@ -61,6 +69,32 @@ onMounted(async () => {
     images.value = data
   } catch (_) {}
 })
+
+function imageData(key) {
+  const value = images.value[key]
+  if (!value || typeof value === 'string') {
+    return { url: value, position_x: 50, position_y: 50, zoom: 1 }
+  }
+  return {
+    url: value.url,
+    position_x: value.position_x ?? 50,
+    position_y: value.position_y ?? 50,
+    zoom: value.zoom ?? 1,
+  }
+}
+
+function imageUrl(key) {
+  return imageData(key).url
+}
+
+function imageStyle(key) {
+  const image = imageData(key)
+  return {
+    objectPosition: `${image.position_x}% ${image.position_y}%`,
+    transform: `scale(${image.zoom})`,
+    transformOrigin: `${image.position_x}% ${image.position_y}%`,
+  }
+}
 
 async function unlock(door) {
   if (active.value !== null) return
@@ -130,12 +164,20 @@ function progressAttr(door) {
 .door-card {
   flex: 1;
   background-color: #1a1a2e;
-  background-size: cover;
-  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
+}
+
+.door-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
 }
 
 .door-overlay {
