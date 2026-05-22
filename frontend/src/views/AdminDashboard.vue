@@ -581,12 +581,17 @@ h2 { margin-bottom: 1.2rem; }
 .cards { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .card {
   background: white; border-radius: 10px; padding: 1.2rem 1.5rem;
-  flex: 1; min-width: 160px; display: flex; flex-direction: column;
+  flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
-.num { font-size: 1.8rem; font-weight: 700; color: #0f3460; }
-.num.small { font-size: 0.9rem; word-break: break-all; }
-.door-state { font-size: 1.2rem; }
+.num { font-size: 1.8rem; font-weight: 700; color: #0f3460; line-height: 1.15; }
+.num.small { font-size: 0.9rem; word-break: break-word; overflow-wrap: anywhere; }
+.door-state {
+  font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .door-state.open { color: #c0392b; }
 .door-state.closed { color: #07834f; }
 .door-state.unknown { color: #666; }
