@@ -5,12 +5,16 @@ Images are stored in backend/uploads/ and served at /api/uploads/<filename>.
 import json
 import os
 from flask import Blueprint, abort, request, jsonify, send_from_directory
+from PIL import Image, UnidentifiedImageError
 from flask_jwt_extended import jwt_required
 from utils.decorators import require_roles
 
 uploads_bp = Blueprint("uploads", __name__)
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
+STORED_EXTENSION = "webp"
+MAX_IMAGE_DIMENSION = 1400
+WEBP_QUALITY = 78
 DOOR_KEYS = ("building_door", "apartment_door")
 
 
@@ -68,6 +72,26 @@ def _allowed(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def _optimized_save(file_storage, save_path):
+    try:
+        image = Image.open(file_storage.stream)
+        image.load()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError("Invalid image file.") from exc
+
+    image.thumbnail((MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION), Image.Resampling.LANCZOS)
+
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
+        background = Image.new("RGB", image.size, "white")
+        alpha = image.convert("RGBA").getchannel("A")
+        background.paste(image.convert("RGBA"), mask=alpha)
+        image = background
+    else:
+        image = image.convert("RGB")
+
+    image.save(save_path, "WEBP", quality=WEBP_QUALITY, method=4)
+
+
 def _current_images():
     """Return current image URLs plus display metadata for both doors."""
     result = {}
@@ -75,7 +99,7 @@ def _current_images():
     meta = _load_meta()
     for key in DOOR_KEYS:
         found = None
-        for ext in ALLOWED_EXTENSIONS:
+        for ext in (STORED_EXTENSION, *sorted(ALLOWED_EXTENSIONS - {STORED_EXTENSION})):
             candidate = os.path.join(udir, f"{key}.{ext}")
             if os.path.exists(candidate):
                 found = f"/api/uploads/{key}.{ext}"
@@ -113,24 +137,26 @@ def upload_image(door_key):
     if not file.filename or not _allowed(file.filename):
         return jsonify({"error": "Invalid file type. Use jpg, png, or webp."}), 400
 
-    ext = file.filename.rsplit(".", 1)[1].lower()
     udir = _uploads_dir()
     os.makedirs(udir, exist_ok=True)
 
-    # Remove any previous file for this key (different extension)
-    for old_ext in ALLOWED_EXTENSIONS:
+    # Remove any previous file for this key. New uploads are stored as optimized WebP.
+    for old_ext in ALLOWED_EXTENSIONS | {STORED_EXTENSION}:
         old_path = os.path.join(udir, f"{door_key}.{old_ext}")
         if os.path.exists(old_path):
             os.remove(old_path)
 
-    save_path = os.path.join(udir, f"{door_key}.{ext}")
-    file.save(save_path)
+    save_path = os.path.join(udir, f"{door_key}.{STORED_EXTENSION}")
+    try:
+        _optimized_save(file, save_path)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     meta = _load_meta()
     meta[door_key] = _default_meta()
     _save_meta(meta)
 
-    return jsonify({"url": f"/api/uploads/{door_key}.{ext}", **meta[door_key]}), 200
+    return jsonify({"url": f"/api/uploads/{door_key}.{STORED_EXTENSION}", **meta[door_key]}), 200
 
 
 @uploads_bp.route("/images/<door_key>/display", methods=["PATCH"])

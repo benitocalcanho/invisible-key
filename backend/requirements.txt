@@ -16,6 +16,7 @@ pyngrok==7.2.0
 
 # Networking / IP utilities
 requests==2.31.0
+Pillow==10.4.0
 
 # Background scheduler for calendar sync
 APScheduler==3.10.4
