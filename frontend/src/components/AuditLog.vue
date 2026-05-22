@@ -1,18 +1,18 @@
 <template>
   <div class="audit-wrap">
     <div class="tz-hint" style="margin-bottom: 0.5em; color: #888; font-size: 0.95em;">
-      All times are shown in your browser's local timezone ({{ timezoneName }}).
+      {{ $t('audit_timezone_hint', { timezone: timezoneName }) }}
     </div>
     <table class="audit-log" v-if="entries.length">
       <thead>
         <tr>
-          <th>Date/Time</th>
-          <th>User</th>
-          <th>Event</th>
+          <th>{{ $t('audit_datetime') }}</th>
+          <th>{{ $t('username') }}</th>
+          <th>{{ $t('audit_event') }}</th>
           <th>IP</th>
-          <th>Device</th>
-          <th>Language</th>
-          <th>Detail</th>
+          <th>{{ $t('audit_device') }}</th>
+          <th>{{ $t('audit_language') }}</th>
+          <th>{{ $t('audit_detail') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -29,18 +29,22 @@
         </tr>
       </tbody>
     </table>
-    <div v-else class="empty">No audit log entries found.</div>
+    <div v-else class="empty">{{ $t('audit_empty') }}</div>
   </div>
 </template>
 
 <script setup>
-// Capitalize and space event names for display
-function formatEvent(event) {
-  if (!event) return '';
-  // Replace underscores with spaces and capitalize
-  return event.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
+import { useI18n } from 'vue-i18n'
+
 defineProps({ entries: Array })
+const { t, te } = useI18n()
+
+function formatEvent(event) {
+  if (!event) return ''
+  const key = `auditEvent.${event}`
+  if (te(key)) return t(key)
+  return event.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
 const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone
 function formatDate(iso) {
   if (!iso) return ''

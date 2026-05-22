@@ -5,26 +5,26 @@
     <div class="status-bar">
       <span class="dot" :class="status.state === 'connected' ? 'dot-green' : 'dot-grey'"></span>
       <span v-if="status.state === 'connected'">
-        Connected to <strong>{{ status.connection }}</strong> on {{ status.device }}
+        {{ $t('wifi_connected_to') }} <strong>{{ status.connection }}</strong> {{ $t('wifi_on_device') }} {{ status.device }}
       </span>
-      <span v-else>Not connected ({{ status.state }})</span>
-      <button @click="loadStatus" class="btn-sm">Refresh</button>
+      <span v-else>{{ $t('wifi_not_connected', { state: status.state }) }}</span>
+      <button @click="loadStatus" class="btn-sm">{{ $t('doorLog.refresh') }}</button>
     </div>
 
     <!-- Nearby networks -->
     <div class="section-card">
       <div class="section-head">
         <div>
-          <h4>Nearby Networks</h4>
-          <p class="hint">Scan visible WiFi networks, select one, then enter the password below.</p>
+          <h4>{{ $t('wifi_nearby_networks') }}</h4>
+          <p class="hint">{{ $t('wifi_scan_hint') }}</p>
         </div>
         <button @click="scanNetworks" :disabled="scanning" class="btn-sm">
-          {{ scanning ? 'Scanning...' : 'Scan' }}
+          {{ scanning ? $t('wifi_scanning') : $t('wifi_scan') }}
         </button>
       </div>
 
       <p v-if="scanError" class="error">{{ scanError }}</p>
-      <p v-else-if="scanned.length === 0" class="hint">No scan results yet.</p>
+      <p v-else-if="scanned.length === 0" class="hint">{{ $t('wifi_no_scan_results') }}</p>
       <ul v-else class="scan-dropdown">
         <li
           v-for="network in scanned"
@@ -40,13 +40,13 @@
 
     <!-- Saved networks -->
     <div class="section-card">
-      <h4>Saved Networks</h4>
-      <p v-if="!saved.length" class="hint">No WiFi networks saved yet.</p>
+      <h4>{{ $t('wifi_saved_networks') }}</h4>
+      <p v-if="!saved.length" class="hint">{{ $t('wifi_no_saved_networks') }}</p>
       <ul v-else class="saved-list">
         <li v-for="net in saved" :key="net.name" :class="{ active: net.active }">
           <span class="net-name">
             {{ net.name }}
-            <span v-if="net.active" class="badge-active">active</span>
+            <span v-if="net.active" class="badge-active">{{ $t('wifi_active') }}</span>
           </span>
           <div class="net-actions">
             <button
@@ -54,7 +54,7 @@
               :disabled="net.active || connecting === net.name"
               class="btn-sm"
             >
-              {{ connecting === net.name ? 'Connecting...' : 'Connect' }}
+              {{ connecting === net.name ? $t('wifi_connecting') : $t('wifi_connect') }}
             </button>
             <button
               @click="deleteSaved(net.name)"
@@ -71,31 +71,30 @@
 
     <!-- Add / update network -->
     <div class="section-card">
-      <h4>Add / Update Network</h4>
+      <h4>{{ $t('wifi_add_update_network') }}</h4>
       <p class="hint">
-        Enter the credentials of any WiFi network, including ones not currently visible.
-        When the Raspberry Pi is moved to that location, it will connect automatically.
+        {{ $t('wifi_add_update_hint') }}
       </p>
 
       <div class="field">
-        <label>Network name (SSID)</label>
-        <input v-model="newSsid" placeholder="e.g. ApartmentWiFi" />
+        <label>{{ $t('wifi_network_name') }}</label>
+        <input v-model="newSsid" :placeholder="$t('wifi_ssid_placeholder')" />
       </div>
 
       <div class="field">
-        <label>Password</label>
-        <input v-model="newPass" type="text" placeholder="WiFi password (min 8 characters)" />
+        <label>{{ $t('password') }}</label>
+        <input v-model="newPass" type="text" :placeholder="$t('wifi_password_placeholder')" />
       </div>
 
       <div class="button-row">
         <button @click="addNetwork" :disabled="adding || connectingNow" class="btn-primary">
-          {{ adding ? $t('saving') : 'Save Credentials' }}
+          {{ adding ? $t('saving') : $t('wifi_save_credentials') }}
         </button>
         <button @click="connectNow" :disabled="adding || connectingNow" class="btn-secondary">
-          {{ connectingNow ? 'Connecting...' : 'Connect Now' }}
+          {{ connectingNow ? $t('wifi_connecting') : $t('wifi_connect_now') }}
         </button>
       </div>
-      <p class="hint action-hint">Connecting now may briefly interrupt this page while the Pi switches networks.</p>
+      <p class="hint action-hint">{{ $t('wifi_connect_interrupt_hint') }}</p>
       <p v-if="addError" class="error">{{ addError }}</p>
       <p v-if="addSuccess" class="success">{{ addSuccess }}</p>
     </div>
@@ -105,8 +104,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '../api.js'
 
+const { t } = useI18n()
 const status = ref({ state: 'unknown', connection: '', device: '' })
 const saved = ref([])
 const scanned = ref([])
@@ -148,7 +149,7 @@ async function scanNetworks() {
     const { data } = await api.get('/wifi/admin/scan')
     scanned.value = data
   } catch (e) {
-    scanError.value = e.response?.data?.error || 'Failed to scan networks.'
+    scanError.value = e.response?.data?.error || t('wifi_scan_failed')
     scanned.value = []
   } finally {
     scanning.value = false
@@ -166,18 +167,18 @@ async function addNetwork() {
   addError.value = ''
   addSuccess.value = ''
   if (!newSsid.value.trim() || !newPass.value) {
-    addError.value = 'SSID and password are required.'
+    addError.value = t('wifi_credentials_required')
     return
   }
   adding.value = true
   try {
     await api.post('/wifi/admin/saved', { ssid: newSsid.value.trim(), passphrase: newPass.value })
-    addSuccess.value = `Credentials saved for "${newSsid.value.trim()}". The Pi will connect automatically when in range.`
+    addSuccess.value = t('wifi_credentials_saved', { ssid: newSsid.value.trim() })
     newSsid.value = ''
     newPass.value = ''
     await loadSaved()
   } catch (e) {
-    addError.value = e.response?.data?.error || 'Failed to save.'
+    addError.value = e.response?.data?.error || t('wifi_save_failed')
   } finally {
     adding.value = false
   }
@@ -187,22 +188,22 @@ async function connectNow() {
   addError.value = ''
   addSuccess.value = ''
   if (!newSsid.value.trim() || !newPass.value) {
-    addError.value = 'SSID and password are required.'
+    addError.value = t('wifi_credentials_required')
     return
   }
   connectingNow.value = true
   try {
     const { data } = await api.post('/wifi/connect', { ssid: newSsid.value.trim(), passphrase: newPass.value })
     if (data.status === 'error') {
-      throw new Error(data.message || 'Failed to connect.')
+      throw new Error(data.message || t('wifi_connect_failed'))
     }
-    addSuccess.value = `Connected to "${newSsid.value.trim()}".`
+    addSuccess.value = t('wifi_connected_success', { ssid: newSsid.value.trim() })
     newSsid.value = ''
     newPass.value = ''
     await loadStatus()
     await loadSaved()
   } catch (e) {
-    addError.value = e.response?.data?.error || e.message || 'Failed to connect.'
+    addError.value = e.response?.data?.error || e.message || t('wifi_connect_failed')
   } finally {
     connectingNow.value = false
   }
@@ -216,7 +217,7 @@ async function connectSaved(name) {
     await loadStatus()
     await loadSaved()
   } catch (e) {
-    actionError.value = e.response?.data?.error || 'Failed to connect.'
+    actionError.value = e.response?.data?.error || t('wifi_connect_failed')
   } finally {
     connecting.value = null
   }
@@ -229,7 +230,7 @@ async function deleteSaved(name) {
     await api.delete(`/wifi/admin/saved/${encodeURIComponent(name)}`)
     saved.value = saved.value.filter(n => n.name !== name)
   } catch (e) {
-    actionError.value = e.response?.data?.error || 'Failed to remove.'
+    actionError.value = e.response?.data?.error || t('wifi_remove_failed')
   } finally {
     deleting.value = null
   }
