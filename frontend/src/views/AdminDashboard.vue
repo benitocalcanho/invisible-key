@@ -143,7 +143,7 @@
     <!-- Door Images tab -->
     <section v-if="tab === 'doors'">
       <h3>{{ $t('tab_doors') }}</h3>
-      <p class="hint">Upload background photos shown on the guest dashboard door cards.</p>
+      <p class="hint">{{ $t('door_images_hint') }}</p>
 
       <div class="preview-mode-row">
         <span class="mode-label">{{ $t('preview_shape') }}</span>
