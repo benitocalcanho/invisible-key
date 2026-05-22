@@ -183,8 +183,8 @@ onMounted(async () => {
     // Pre-populate all fields with their current value; default mode to 'fixed'
     for (const [key, _meta] of Object.entries(data.schema)) {
       const val = data.values[key]?.value
-      if (val) {
-        form.value[key] = val
+      if (val !== undefined && val !== null && val !== '') {
+        form.value[key] = String(val)
       } else if (key === 'CALENDAR_GUEST_PASSWORD_MODE') {
         form.value[key] = 'fixed'
       }
@@ -207,8 +207,9 @@ async function saveSection(section) {
   // Build payload: include all fields from this section that have a value in form
   const payload = {}
   for (const key of section.keys) {
-    const v = form.value[key]
-    if (v && v.trim()) {
+    const raw = form.value[key]
+    const v = raw === undefined || raw === null ? '' : String(raw)
+    if (v.trim()) {
       payload[key] = v.trim()
     }
   }
@@ -241,8 +242,8 @@ async function saveSection(section) {
     // Re-fill all fields from fresh values; never reset mode to empty
     for (const key of section.keys) {
       const val = fresh.values[key]?.value
-      if (val) {
-        form.value[key] = val
+      if (val !== undefined && val !== null && val !== '') {
+        form.value[key] = String(val)
       } else if (key === 'CALENDAR_GUEST_PASSWORD_MODE') {
         // keep whatever the user selected — it was just saved
       } else {
