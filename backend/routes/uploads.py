@@ -4,7 +4,7 @@ Images are stored in backend/uploads/ and served at /api/uploads/<filename>.
 """
 import json
 import os
-from flask import Blueprint, abort, request, jsonify, send_from_directory
+from flask import Blueprint, abort, current_app, request, jsonify, send_from_directory
 from PIL import Image, UnidentifiedImageError
 from flask_jwt_extended import jwt_required
 from utils.decorators import require_roles
@@ -13,8 +13,11 @@ uploads_bp = Blueprint("uploads", __name__)
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
 STORED_EXTENSION = "webp"
+FALLBACK_EXTENSION = "jpg"
+STORED_EXTENSIONS = (STORED_EXTENSION, FALLBACK_EXTENSION)
 MAX_IMAGE_DIMENSION = 1400
 WEBP_QUALITY = 78
+JPEG_QUALITY = 82
 DOOR_KEYS = ("building_door", "apartment_door")
 
 
@@ -72,7 +75,7 @@ def _allowed(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def _optimized_save(file_storage, save_path):
+def _prepare_image(file_storage):
     try:
         image = Image.open(file_storage.stream)
         image.load()
@@ -85,11 +88,26 @@ def _optimized_save(file_storage, save_path):
         background = Image.new("RGB", image.size, "white")
         alpha = image.convert("RGBA").getchannel("A")
         background.paste(image.convert("RGBA"), mask=alpha)
-        image = background
-    else:
-        image = image.convert("RGB")
+        return background
 
-    image.save(save_path, "WEBP", quality=WEBP_QUALITY, method=4)
+    return image.convert("RGB")
+
+
+def _optimized_save(file_storage, temp_paths):
+    image = _prepare_image(file_storage)
+
+    try:
+        image.save(temp_paths[STORED_EXTENSION], "WEBP", quality=WEBP_QUALITY, method=4)
+        return STORED_EXTENSION
+    except (OSError, ValueError, KeyError) as exc:
+        current_app.logger.warning("WebP door image save failed; falling back to JPEG: %s", exc)
+        try:
+            os.remove(temp_paths[STORED_EXTENSION])
+        except FileNotFoundError:
+            pass
+
+    image.save(temp_paths[FALLBACK_EXTENSION], "JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True)
+    return FALLBACK_EXTENSION
 
 
 def _current_images():
@@ -99,7 +117,7 @@ def _current_images():
     meta = _load_meta()
     for key in DOOR_KEYS:
         found = None
-        for ext in (STORED_EXTENSION, *sorted(ALLOWED_EXTENSIONS - {STORED_EXTENSION})):
+        for ext in (*STORED_EXTENSIONS, *sorted(ALLOWED_EXTENSIONS - set(STORED_EXTENSIONS))):
             candidate = os.path.join(udir, f"{key}.{ext}")
             if os.path.exists(candidate):
                 found = f"/api/uploads/{key}.{ext}"
@@ -140,23 +158,44 @@ def upload_image(door_key):
     udir = _uploads_dir()
     os.makedirs(udir, exist_ok=True)
 
-    # Remove any previous file for this key. New uploads are stored as optimized WebP.
-    for old_ext in ALLOWED_EXTENSIONS | {STORED_EXTENSION}:
-        old_path = os.path.join(udir, f"{door_key}.{old_ext}")
-        if os.path.exists(old_path):
-            os.remove(old_path)
+    temp_paths = {
+        ext: os.path.join(udir, f".{door_key}.upload.{ext}")
+        for ext in STORED_EXTENSIONS
+    }
+    for temp_path in temp_paths.values():
+        try:
+            os.remove(temp_path)
+        except FileNotFoundError:
+            pass
 
-    save_path = os.path.join(udir, f"{door_key}.{STORED_EXTENSION}")
     try:
-        _optimized_save(file, save_path)
+        saved_ext = _optimized_save(file, temp_paths)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
+    except Exception as exc:  # keep old image in place if optimization fails unexpectedly
+        current_app.logger.exception("Door image upload failed: %s", exc)
+        return jsonify({"error": "Could not process image."}), 500
+
+    final_path = os.path.join(udir, f"{door_key}.{saved_ext}")
+    os.replace(temp_paths[saved_ext], final_path)
+
+    # Remove previous files for this key after the replacement succeeds.
+    for old_ext in ALLOWED_EXTENSIONS | set(STORED_EXTENSIONS):
+        old_path = os.path.join(udir, f"{door_key}.{old_ext}")
+        if old_path != final_path and os.path.exists(old_path):
+            os.remove(old_path)
+
+    for temp_path in temp_paths.values():
+        try:
+            os.remove(temp_path)
+        except FileNotFoundError:
+            pass
 
     meta = _load_meta()
     meta[door_key] = _default_meta()
     _save_meta(meta)
 
-    return jsonify({"url": f"/api/uploads/{door_key}.{STORED_EXTENSION}", **meta[door_key]}), 200
+    return jsonify({"url": f"/api/uploads/{door_key}.{saved_ext}", **meta[door_key]}), 200
 
 
 @uploads_bp.route("/images/<door_key>/display", methods=["PATCH"])
