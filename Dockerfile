@@ -2,7 +2,8 @@
 #
 # Multi-stage build:
 #   Stage 1 (frontend-build): Compile the Vue 3 SPA with Node.js
-#   Stage 2 (app):            Python/Gunicorn production server
+#   Stage 2 (python-deps):    Build Python dependencies in a venv
+#   Stage 3 (app):            Python/Gunicorn production server
 #
 # Single image works on both desktop and Raspberry Pi.
 # GPIO behaviour is controlled at runtime via ENABLE_GPIO env var:
@@ -29,7 +30,41 @@ RUN npm run build
 # Output: /app/frontend/dist/
 
 # ════════════════════════════════════════════════════════════════════════════
-# Stage 2 — Production image (runs on Pi or desktop)
+# Stage 2 — Build Python dependencies
+# ════════════════════════════════════════════════════════════════════════════
+FROM python:3.11-slim AS python-deps
+
+WORKDIR /app
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Build packages are intentionally kept out of the final runtime image.
+# Pillow may compile from source on linux/arm/v7, so zlib/jpeg/webp headers
+# must be available in this builder stage.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libffi-dev \
+    libc6-dev \
+    zlib1g-dev \
+    libjpeg62-turbo-dev \
+    libwebp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt ./backend/requirements.txt
+COPY backend/requirements-pi.txt ./backend/requirements-pi.txt
+
+# Always install requirements-pi.txt (includes gpiozero). gpiozero uses
+# MockFactory automatically on non-Pi hardware, so it is safe everywhere.
+RUN python -m venv "$VIRTUAL_ENV" && \
+    pip install --upgrade pip --no-cache-dir && \
+    pip install --no-cache-dir --prefer-binary -r backend/requirements-pi.txt
+
+# Install the ngrok agent during the image build. This keeps slow or flaky
+# runtime DNS/downloads off the Raspberry Pi when the tunnel starts.
+RUN python -c "from pyngrok import installer; installer.install_ngrok('/usr/local/bin/ngrok')"
+
+# ════════════════════════════════════════════════════════════════════════════
+# Stage 3 — Production image (runs on Pi or desktop)
 # ════════════════════════════════════════════════════════════════════════════
 FROM python:3.11-slim
 
@@ -37,45 +72,26 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_ENV=production
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-# ── System packages ──────────────────────────────────────────────────────────
-# bash       : needed to run stop_ngrok.sh
-# procps     : pkill used by stop_ngrok.sh
-# gcc        : needed to compile any Python C extensions (bcrypt, cryptography)
-# libffi-dev  : required by cffi (bcrypt dependency)
-# libc6-dev   : C stdlib headers required to compile cffi from source on armv7l
-# zlib/libjpeg/libwebp: required when Pillow builds from source on armv7
-# network-manager : provides nmcli for WiFi management via host NetworkManager (Pi)
+# ── Runtime system packages ─────────────────────────────────────────────────
+# bash/procps       : needed by stop_ngrok.sh
+# zlib/jpeg/webp    : runtime libraries for Pillow image optimization
+# network-manager   : provides nmcli for WiFi management via host NetworkManager
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     procps \
-    gcc \
-    libffi-dev \
-    libc6-dev \
-    zlib1g-dev \
-    libjpeg62-turbo-dev \
-    libwebp-dev \
+    zlib1g \
+    libjpeg62-turbo \
+    libwebp7 \
     network-manager \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Python dependencies ──────────────────────────────────────────────────────
-# Always install requirements-pi.txt (includes gpiozero).
-# gpiozero uses MockFactory automatically on non-Pi hardware, so it is safe
-# to include in every image variant.
-COPY backend/requirements.txt ./backend/requirements.txt
-COPY backend/requirements-pi.txt ./backend/requirements-pi.txt
-
-# --prefer-binary: use pre-built wheels instead of compiling from source.
-# This is critical for arm/v7 (Pi 2/3) where Rust-based packages like
-# bcrypt and cryptography would otherwise time out during QEMU compilation.
-RUN pip install --upgrade pip --no-cache-dir && \
-    pip install --no-cache-dir --prefer-binary -r backend/requirements-pi.txt
-
-# Install the ngrok agent during the image build. This keeps slow or flaky
-# runtime DNS/downloads off the Raspberry Pi when the tunnel starts.
-RUN python -c "from pyngrok import installer; installer.install_ngrok('/usr/local/bin/ngrok')"
+COPY --from=python-deps /opt/venv /opt/venv
+COPY --from=python-deps /usr/local/bin/ngrok /usr/local/bin/ngrok
 
 # ── Application source ───────────────────────────────────────────────────────
 COPY backend/ ./backend/
