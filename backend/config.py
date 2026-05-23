@@ -1,8 +1,14 @@
 """
 Environment-based configuration.
-All sensitive values must come from config/.env — never hardcoded.
+
+Operational settings live in the dashboard. Bootstrap signing secrets may be
+provided through environment variables, but production installs can also start
+plug-and-play: default/blank secrets are replaced with random values persisted
+in the app data volume.
 """
+import json
 import os
+import secrets
 from datetime import timedelta
 from pathlib import Path
 
@@ -15,9 +21,63 @@ except ImportError:
     pass  # python-dotenv optional; rely on real env vars in production
 
 
+_AUTO_GENERATE_SECRET_VALUES = {
+    "",
+    "change-me",
+    "invisible-key-default-secret-key-change-me",
+    "invisible-key-default-jwt-key-change-me",
+}
+_BOOTSTRAP_SECRETS = None
+
+
+def _bootstrap_secret_file() -> Path:
+    override = os.getenv("BOOTSTRAP_SECRETS_FILE", "").strip()
+    if override:
+        return Path(override)
+    return Path(__file__).parent / "instance" / "data" / "bootstrap_secrets.json"
+
+
+def _load_or_create_bootstrap_secrets() -> dict:
+    global _BOOTSTRAP_SECRETS
+    if _BOOTSTRAP_SECRETS is not None:
+        return _BOOTSTRAP_SECRETS
+
+    path = _bootstrap_secret_file()
+    data = {}
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = {}
+
+    changed = False
+    for key in ("secret_key", "jwt_secret_key"):
+        if not isinstance(data.get(key), str) or len(data[key]) < 32:
+            data[key] = secrets.token_hex(32)
+            changed = True
+
+    if changed or not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        try:
+            path.chmod(0o600)
+        except OSError:
+            pass
+
+    _BOOTSTRAP_SECRETS = data
+    return data
+
+
+def _get_signing_secret(env_name: str, store_key: str) -> str:
+    value = os.getenv(env_name, "").strip()
+    if value and value not in _AUTO_GENERATE_SECRET_VALUES:
+        return value
+    return _load_or_create_bootstrap_secrets()[store_key]
+
+
 class Config:
     # ── Flask ────────────────────────────────────────────────
-    SECRET_KEY: str = os.environ["SECRET_KEY"]
+    SECRET_KEY: str = _get_signing_secret("SECRET_KEY", "secret_key")
     DEBUG: bool = os.getenv("FLASK_ENV", "production") == "development"
 
     # ── Database ─────────────────────────────────────────────
@@ -27,7 +87,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
     # ── JWT ──────────────────────────────────────────────────
-    JWT_SECRET_KEY: str = os.environ["JWT_SECRET_KEY"]
+    JWT_SECRET_KEY: str = _get_signing_secret("JWT_SECRET_KEY", "jwt_secret_key")
     JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(minutes=15)
     JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(hours=8)
 

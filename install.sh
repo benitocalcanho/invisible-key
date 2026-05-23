@@ -8,7 +8,7 @@
 #  What this script does:
 #    1. Installs Docker if not already present
 #    2. Downloads docker-compose.prod.yml and .env.example
-#    3. Prompts you to fill in optional bootstrap secrets
+#    3. Creates optional bootstrap overrides
 #    4. Starts the container (pulls the pre-built image — no build needed)
 # ============================================================
 
@@ -81,12 +81,12 @@ curl -fsSL "$REPO_RAW/.env.example"            -o .env.example
 # ── Create .env if not already present ───────────────────────────────────────
 if [[ ! -f .env ]]; then
   cp .env.example .env
-  warn ".env created from example. You can adjust bootstrap defaults now."
+  warn ".env created from example. You can adjust optional bootstrap defaults now."
 else
   info ".env already exists — skipping copy."
 fi
 
-# ── Prompt user to configure secrets ────────────────────────────────────────
+# ── Prompt user to configure optional bootstrap overrides ───────────────────
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BOLD}  Optional: review .env before starting${NC}"
@@ -95,8 +95,8 @@ echo ""
 echo "  The app works with defaults, then lets you configure ngrok, iCal, SMTP,"
 echo "  users, and passwords from the admin dashboard."
 echo ""
-echo "  For production, you may change ADMIN_PASSWORD and generate secret keys:"
-echo "    python3 -c \"import secrets; print(secrets.token_hex(32))\""
+echo "  Signing secrets are generated automatically and persisted in the Docker data volume."
+echo "  You only need .env if you want to override bootstrap defaults such as ADMIN_PASSWORD."
 echo ""
 
 read -r -p "Open .env in nano now? [y/N] " answer

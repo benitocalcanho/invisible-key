@@ -52,10 +52,12 @@ http://localhost:5173
 
 Only bootstrap values belong in environment variables. Operational settings such as ngrok, SMTP, iCal, WiFi, and door images are configured in the admin dashboard.
 
+Normal installs do not need manual Flask/JWT secrets. If `SECRET_KEY` or `JWT_SECRET_KEY` is blank or left at a compose default, the app generates persistent random signing secrets in the data volume.
+
 | Variable | Purpose |
 |---|---|
-| `SECRET_KEY` | Flask signing secret |
-| `JWT_SECRET_KEY` | JWT signing secret |
+| `SECRET_KEY` | Optional advanced override for Flask signing secret |
+| `JWT_SECRET_KEY` | Optional advanced override for JWT signing secret |
 | `ADMIN_USERNAME` | Initial admin username |
 | `ADMIN_PASSWORD` | Initial admin password |
 | `APP_TIMEZONE` | Optional IANA timezone override |
