@@ -27,13 +27,11 @@ When you are away from the network, use **Raspberry Pi Connect** remote shell in
 ## 3) Update app code on the Pi
 
 ```bash
-cd ~/docker/invisible-key
-git fetch origin
-git checkout main
+cd ~/invisible-key
 git pull --ff-only origin main
 ```
 
-## 4) Rebuild and restart production stack
+## 4) Pull and restart production stack
 
 ```bash
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml pull app
@@ -42,7 +40,7 @@ docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d --force
 
 Note: `docker-compose.prod.yml` uses prebuilt GHCR images. `git pull` updates compose/config files, while `pull` + `force-recreate` updates the running container image.
 
-If you need to build locally on the Pi from source instead of pulling GHCR image:
+Avoid building locally on Pi 2/3 unless you have a specific reason. If you must build from source instead of pulling the GHCR image:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.pi.yml up -d --build

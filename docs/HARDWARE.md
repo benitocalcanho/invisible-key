@@ -130,6 +130,6 @@ print("closed" if sensor.is_pressed else "open")
 
 ## WiFi Hardware Note
 
-Pi 3 has one onboard WiFi chip. The optional hotspot script tries to use a virtual `uap0` AP interface alongside `wlan0`.
+The main Docker deployment does not require hotspot mode. Seed WiFi with Raspberry Pi Imager and manage additional networks from Admin -> WiFi Networks.
 
-If hotspot mode is unstable, use a USB WiFi adapter with AP mode support. The main Docker deployment does not require hotspot mode.
+The legacy optional hotspot script may try to use a virtual `uap0` AP interface alongside `wlan0`. If you intentionally use that script and hotspot mode is unstable, use a USB WiFi adapter with AP mode support.

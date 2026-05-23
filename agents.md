@@ -31,6 +31,9 @@ Scope: This is a shared app. Do not encode maintainer-specific assumptions (time
 - Call out exact rollback or workaround commands when risk exists.
 - Prefer deterministic scripts over ad-hoc shell steps.
 
+## Local Development Environment
+- Docker is installed on this PC through Docker Desktop. Docker CLI commands only work when Docker Desktop is running; if Docker commands fail with a missing/unreachable daemon, ask the user to launch Docker Desktop before retrying local Docker builds or compose commands.
+
 ## Frontend i18n Rules
 - Do not introduce new translation key names without adding them to all locales.
 - Avoid partial string migrations that leave missing keys.

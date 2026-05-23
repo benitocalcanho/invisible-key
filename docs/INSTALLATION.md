@@ -1,64 +1,65 @@
-# Installation Guide
+# Raspberry Pi Installation Guide
 
-This is the canonical install guide for Invisible Key. Use Docker unless you have a specific reason to manage Python, Node, and systemd manually.
+This is the canonical installation guide for Invisible Key on Raspberry Pi.
 
-Calendar schedule times are deployment-local. The app detects the host/container timezone at runtime; set `APP_TIMEZONE` only when a host needs an explicit IANA timezone override such as `Europe/Lisbon`.
+Use Docker. The app is published as a multi-architecture image for:
 
-## Recommended Path
+- `linux/arm/v7` — Raspberry Pi 2/3 with 32-bit OS
+- `linux/arm64` — Raspberry Pi 3/4/5 with 64-bit OS
+- `linux/amd64` — desktop/server development
 
-| Target | Command |
+Desktop/no-GPIO mode is documented at the end. For production Raspberry Pi installs, always include `docker-compose.pi.yml`.
+
+## Documentation Map
+
+| File | Purpose |
 |---|---|
-| Desktop or server without GPIO | `docker compose -f docker-compose.prod.yml up -d` |
-| Raspberry Pi with relays, reed sensor, or WiFi management | `docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d` |
+| [INSTALLATION.md](INSTALLATION.md) | Main Raspberry Pi install path |
+| [INSTALL_PI2B.md](INSTALL_PI2B.md) | Pi 2 B-specific notes: 32-bit OS, USB WiFi, package Docker |
+| [INSTALL_PI3B.md](INSTALL_PI3B.md) | Pi 3 B/B+-specific notes |
+| [DEPLOY_PI.md](DEPLOY_PI.md) | Update/redeploy checklist |
+| [HARDWARE.md](HARDWARE.md) | Relay and reed switch wiring |
+| [REMOTE_ACCESS.md](REMOTE_ACCESS.md) | ngrok, Raspberry Pi Connect, Tailscale |
 
-## Prepare The Raspberry Pi
+## 1. Prepare The SD Card
 
-Use **Raspberry Pi Imager** to flash the SD card. This is the most reliable way to make the Pi headless and reachable before the app is installed.
+Use **Raspberry Pi Imager**.
 
-Recommended Imager choices:
-
-| Imager step | Selection |
-|---|---|
-| Device | Your Raspberry Pi model |
-| OS | Raspberry Pi OS Lite |
-| Storage | The microSD card for the Pi |
-
-OS architecture:
-
-| Raspberry Pi | Recommended OS |
+| Raspberry Pi model | Recommended OS |
 |---|---|
 | Raspberry Pi 2 B / older 32-bit-only boards | Raspberry Pi OS Lite 32-bit |
-| Raspberry Pi 3, 4, 5 | Raspberry Pi OS Lite 64-bit |
+| Raspberry Pi 3 B/B+ | Raspberry Pi OS Lite 64-bit preferred; 32-bit also works |
+| Raspberry Pi 4/5 | Raspberry Pi OS Lite 64-bit |
 
-For Raspberry Pi 2 B, also read [INSTALL_PI2B.md](INSTALL_PI2B.md). It uses the same Docker deployment, but the OS and expectations are different because the board is 32-bit and has no onboard WiFi.
+Avoid Raspberry Pi OS Full/Desktop for production installs. Lite keeps the SD card cleaner and leaves more room for Docker images and logs.
 
 Before writing the card, open **OS Customisation** and set:
 
 | Setting | Recommended value |
 |---|---|
-| Hostname | `invisible-key` or another memorable name |
-| Username/password | Create the normal Pi login, for example user `pi` with a strong password |
-| Wireless LAN | Set the WiFi SSID, password, and WiFi country |
-| Locale | Set timezone, keyboard layout, and language |
-| SSH | Enable SSH, preferably with your SSH public key; password SSH is acceptable for first install |
-| Raspberry Pi Connect | Enable/link it if Imager offers the option |
+| Hostname | `invisible-key` |
+| Username/password | A normal Pi login, for example `pi` with a strong password |
+| Wireless LAN | Primary WiFi SSID/password and WiFi country |
+| Locale | Correct timezone, keyboard layout, and language |
+| SSH | Enabled |
+| Raspberry Pi Connect | Enabled/linked if Imager offers it |
 
-Raspberry Pi Connect is useful as the recovery/admin shell path when you are away from the local network. It can replace Tailscale for simple remote SSH-style maintenance. It does **not** replace ngrok for guest/admin web access to the app. If you do use Tailscale for production recovery access, disable key expiry for the Pi in the Tailscale admin dashboard after enrollment so it does not require re-authentication later.
+Raspberry Pi Connect is a useful recovery/admin shell. It does not replace ngrok for guest web access.
 
-If the Pi will connect through a WiFi repeater/range extender, especially with a USB WiFi adapter, disable WiFi MAC randomization after first login. See the WiFi note in [INSTALL_PI2B.md](INSTALL_PI2B.md). Repeaters can use MAC proxying, and local SSH/app access may fail even while ping works unless the WiFi profile is stable.
+## 2. First Boot
 
-After writing the card, boot the Pi and wait a minute or two for first-boot setup to finish. Then connect using one of:
+Boot the Pi and wait a minute or two for first-boot setup.
+
+Connect by SSH:
 
 ```bash
 ssh pi@invisible-key.local
 ssh pi@<pi-ip>
 ```
 
-or open Raspberry Pi Connect in a browser and use the remote shell.
+Or use Raspberry Pi Connect remote shell.
 
-## First Boot Setup
-
-Start from a clean Raspberry Pi OS Lite shell. The Lite image is intentionally minimal, so install basic tools before cloning the app:
+Install basic tools:
 
 ```bash
 sudo apt update
@@ -66,27 +67,31 @@ sudo apt upgrade -y
 sudo apt install -y git curl ca-certificates
 ```
 
-For headless Raspberry Pi OS Lite installs, enable user lingering so Raspberry Pi Connect can remain available after a reboot before you manually log in:
+For headless installs using Raspberry Pi Connect, enable user lingering so the user service can remain available after reboot before manual login:
 
 ```bash
 loginctl enable-linger
 ```
 
-On a Raspberry Pi, always include `docker-compose.pi.yml`. The Pi overlay:
-- sets `ENABLE_GPIO=true`
-- uses the real `gpiozero` driver
-- maps `/dev/gpiomem` for GPIO access
-- mounts `/var/run/dbus` so the container can talk to the host NetworkManager for WiFi management
+## 3. Keep The Pi Awake 24/7
 
-Do not add `privileged: true` for normal GPIO use. `/dev/gpiomem` is enough for the relay and reed sensor paths used by this app.
+Invisible Key is a door access controller. It should not sleep.
 
-## Prerequisites
+Run this on Raspberry Pi OS Lite:
 
-- Raspberry Pi OS Lite, prepared with WiFi and SSH through Raspberry Pi Imager, or another Linux host with Docker
-- Network access to pull the image from GitHub Container Registry
-- For GPIO hardware: Raspberry Pi with `/dev/gpiomem`
+```bash
+sudo raspi-config nonint do_blanking 1
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+sudo systemctl disable NetworkManager-wait-online.service
+```
 
-Install Docker on Raspberry Pi 3/4/5 with Raspberry Pi OS 64-bit:
+This applies to Pi 2, Pi 3, Pi 4, and Pi 5. The app, WiFi, ngrok, scheduler, and GPIO polling are expected to run continuously.
+
+## 4. Install Docker
+
+### Raspberry Pi 3/4/5
+
+Use Docker's convenience script:
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -94,7 +99,20 @@ sudo usermod -aG docker "$USER"
 sudo reboot
 ```
 
-On Raspberry Pi 2 B with Raspberry Pi OS Lite 32-bit Trixie, use [INSTALL_PI2B.md](INSTALL_PI2B.md) instead. Docker's upstream Raspbian repository may not provide a `trixie` release for that board, so the Pi 2 B guide installs `docker.io` and `docker-compose` from Raspberry Pi OS packages.
+### Raspberry Pi 2 B
+
+Do not use Docker's convenience script on Raspberry Pi OS Lite 32-bit Trixie. Use Raspberry Pi OS packages instead:
+
+```bash
+sudo rm -f /etc/apt/sources.list.d/docker.list
+sudo apt update
+sudo apt install -y docker.io docker-compose
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+sudo reboot
+```
+
+See [INSTALL_PI2B.md](INSTALL_PI2B.md) for Pi 2 B details.
 
 After reboot, verify:
 
@@ -103,35 +121,32 @@ docker --version
 docker compose version
 ```
 
-## Install
+If your system only has the old Compose binary, use `docker-compose` instead of `docker compose`.
 
-Clone the repository:
+## 5. Install Invisible Key
+
+Clone the app:
 
 ```bash
 git clone https://github.com/benitocalcanho/invisible-key.git
 cd invisible-key
 ```
 
-Start on Raspberry Pi:
+Start the Raspberry Pi production stack:
 
 ```bash
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
 ```
 
-Start on desktop or non-GPIO server:
+The Pi overlay is required for:
 
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
+- GPIO relay control
+- GPIO23 reed sensor monitoring
+- Admin WiFi management through host NetworkManager
 
-Check status:
+Do not add `privileged: true` for normal operation. The Pi overlay maps only the needed host interfaces.
 
-```bash
-docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml ps
-docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=200 app
-```
-
-## First Login
+## 6. First Login
 
 Open:
 
@@ -139,7 +154,7 @@ Open:
 http://<pi-ip>:5000
 ```
 
-Default credentials:
+Default login:
 
 ```text
 admin / admin12345
@@ -147,22 +162,23 @@ admin / admin12345
 
 Change the admin password immediately.
 
-## Configure In The Dashboard
+## 7. Configure In The Dashboard
 
-After first login, configure operational settings in the admin dashboard instead of editing `.env`:
+After first login, configure operational settings in the admin dashboard.
 
 | Setting | Dashboard area |
 |---|---|
-| Admin/users/cleaner accounts | Users / Calendar Sync |
+| Admin/users/cleaner accounts | Users |
 | iCal URL | Calendar Sync |
 | Guest password mode | Calendar Sync |
 | Check-in / check-out times | Calendar Sync |
 | ngrok token and static domain | ngrok Tunnel |
-| SMTP notifications | Email |
-| Saved WiFi networks | WiFi Networks |
-| Door photos | Door Images |
+| SMTP notifications | E-Mail |
+| Saved WiFi networks | WLAN/WiFi Networks |
+| Door photos and crop/position | Door Images |
+| Door reed sensor log | Door Log |
 
-Only bootstrap secrets belong in environment variables:
+Only bootstrap values belong in environment variables:
 
 | Variable | Purpose |
 |---|---|
@@ -170,7 +186,40 @@ Only bootstrap secrets belong in environment variables:
 | `JWT_SECRET_KEY` | JWT signing secret |
 | `ADMIN_USERNAME` | Initial admin username |
 | `ADMIN_PASSWORD` | Initial admin password |
-| `APP_TIMEZONE` | Optional timezone override |
+| `APP_TIMEZONE` | Optional IANA timezone override |
+
+## 8. Remote Access
+
+Use:
+
+- **ngrok** for guest/admin web access from outside the local network
+- **Raspberry Pi Connect** for recovery/admin remote shell
+- **Tailscale** optionally for private VPN SSH/admin access
+
+If you use Tailscale in production, disable key expiry for the Pi in the Tailscale admin dashboard after enrollment so it does not require re-authentication later.
+
+See [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
+
+## 9. Verify
+
+Check container status:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml ps
+docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=200 app
+```
+
+Check the app locally on the Pi:
+
+```bash
+curl -I http://127.0.0.1:5000
+```
+
+Check effective timezone and scheduler logs:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=300 app | grep -Ei "Effective app timezone|Scheduler started|checkout|checkin|timezone"
+```
 
 ## Persistent Data
 
@@ -196,34 +245,44 @@ docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml restart app
 
 ## Updates
 
-For repeatable Raspberry Pi updates, use [DEPLOY_PI.md](DEPLOY_PI.md).
+Use [DEPLOY_PI.md](DEPLOY_PI.md) for the full checklist.
 
 Short version:
 
 ```bash
-git pull --ff-only
+cd ~/invisible-key
+git pull --ff-only origin main
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml pull app
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d --force-recreate app
 ```
 
-## Logs
+## Logs And SD Card Protection
 
-```bash
-docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs -f app
-```
-
-The Docker Compose files cap container logs with Docker's `json-file` log driver:
+The Docker Compose files cap app container logs with Docker's `json-file` log driver:
 
 ```yaml
 max-size: "5m"
 max-file: "3"
 ```
 
-This keeps recent debugging history while limiting the app container log to about 15 MB.
+The app also trims old database log rows by default:
+
+| Log | Default retention |
+|---|---:|
+| Audit log | 180 days |
+| Door sensor log | 90 days |
+
+## WiFi Notes
+
+Seed the primary WiFi during SD-card creation. Add or remove later networks from Admin -> WiFi Networks.
+
+If the Pi will connect through a WiFi repeater/range extender, especially with a USB WiFi adapter, disable WiFi MAC randomization after first login. Some repeaters use MAC proxying, and local SSH/app access can fail even while ping works.
+
+See [INSTALL_PI2B.md](INSTALL_PI2B.md#wifi-and-repeater-notes) for the exact NetworkManager setting. The same note can apply to Pi 3/4/5 when using a repeater.
 
 ## Optional Manual Install
 
-The Docker image is the supported path. The old setup scripts are still present for manual/systemd installs, but they are secondary:
+Docker is the supported production path. The old setup scripts remain only for custom/manual installs:
 
 ```bash
 sudo bash scripts/01-setup-pi.sh
@@ -235,12 +294,36 @@ Use this path only when Docker is not available or when you intentionally want O
 
 ## Optional Hotspot Script
 
-The hotspot setup is not part of the main deployment path, and the public `/wifi-setup` page is disabled in production. Seed the primary WiFi during SD-card creation, then manage additional networks from Admin -> WiFi Networks.
+The old public `/wifi-setup` page is disabled in production. The hotspot script is not part of the main deployment path.
 
-The legacy hotspot script remains only for manual recovery or custom installs:
+Seed primary WiFi with Raspberry Pi Imager, then manage additional networks in Admin -> WiFi Networks.
 
 ```bash
 sudo bash scripts/02-setup-hotspot.sh
 ```
 
-Raspberry Pi 2 B generally needs a USB WiFi adapter with AP mode support.
+## Desktop Development
+
+Desktop/no-GPIO mode is for development only:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+For hot reload without Docker:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.

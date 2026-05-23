@@ -1,34 +1,35 @@
 # Raspberry Pi 2 B Notes
 
-Use [INSTALLATION.md](INSTALLATION.md) for the canonical install instructions. This file keeps the Raspberry Pi 2 B-specific details in one place.
+Use [INSTALLATION.md](INSTALLATION.md) for the canonical install guide. This file only contains Raspberry Pi 2 B-specific notes.
 
-## Hardware Baseline
+## What Is Different On Pi 2 B
 
-- Raspberry Pi 2 Model B
-- Raspberry Pi OS Lite 32-bit
-- 16 GB or larger microSD card recommended
-- 5V / 2A or better power supply
-- Ethernet, or a USB WiFi adapter supported by Raspberry Pi OS
+- Use **Raspberry Pi OS Lite 32-bit**.
+- Raspberry Pi 2 B has no onboard WiFi; use Ethernet or a supported USB WiFi adapter.
+- Docker image pulls and first startup are slower than on Pi 3/4/5.
+- Do not build the Docker image locally on the Pi 2 B; pull the prebuilt GHCR image.
+- Use a reliable 5V / 2A or better power supply.
+- Use a good 16 GB or larger microSD card.
 
-The Raspberry Pi 2 B is 32-bit and has no onboard WiFi. In Raspberry Pi Imager, choose **Raspberry Pi OS Lite 32-bit**. Do not choose the 64-bit image for this board.
+The app is still intended to run 24/7 on Pi 2 B. Apply the no-sleep commands from [INSTALLATION.md](INSTALLATION.md#3-keep-the-pi-awake-247).
 
-## First Boot Setup
+## OS Selection
 
-After first boot, install the basic tools that are not guaranteed to be present on Lite:
+In Raspberry Pi Imager:
 
-```bash
-sudo apt update
-sudo apt upgrade -y
-sudo apt install -y git curl ca-certificates
-```
+| Field | Value |
+|---|---|
+| Device | Raspberry Pi 2 |
+| OS | Raspberry Pi OS Lite 32-bit |
+| Hostname | `invisible-key` |
+| WiFi | Configure if using a USB WiFi adapter |
+| SSH | Enabled |
 
-If you use Raspberry Pi Connect for remote shell access, enable user lingering:
+Do not choose the 64-bit image for Raspberry Pi 2 B.
 
-```bash
-loginctl enable-linger
-```
+## Docker Install On Pi 2 B
 
-Install Docker from the Raspberry Pi OS packages. Do **not** use `curl -fsSL https://get.docker.com | sh` on Raspberry Pi OS 32-bit Trixie; Docker's upstream Raspbian repo may not provide a `trixie` release for this board.
+On Raspberry Pi OS Lite 32-bit Trixie, Docker's upstream Raspbian repository may not provide a `trixie` release. Use Raspberry Pi OS packages:
 
 ```bash
 sudo rm -f /etc/apt/sources.list.d/docker.list
@@ -46,23 +47,15 @@ docker --version
 docker compose version
 ```
 
-## Install Invisible Key
+If `docker compose` is unavailable but `docker-compose` works, replace `docker compose` with `docker-compose` in commands.
 
-Clone the repository, or update the existing clone if you already tried once:
+## App Install Command
 
-```bash
-if [ -d invisible-key ]; then
-  cd invisible-key
-  git pull --ff-only origin main
-else
-  git clone https://github.com/benitocalcanho/invisible-key.git
-  cd invisible-key
-fi
-```
-
-Start the app:
+Use the same Raspberry Pi compose command as every other Pi:
 
 ```bash
+git clone https://github.com/benitocalcanho/invisible-key.git
+cd invisible-key
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
 ```
 
@@ -70,20 +63,27 @@ The published Docker image includes `linux/arm/v7`, which is the architecture us
 
 ## Performance Expectations
 
-Raspberry Pi 2 B is supported as a lightweight deployment target, but it is slower than a Pi 3/4/5:
+Normal on Pi 2 B:
 
 - Docker image pulls can take several minutes.
 - First startup can feel slow.
-- Avoid building the image locally on the Pi 2 B; pull the prebuilt GHCR image instead.
-- Use a reliable power supply and a good microSD card.
+- The first pull after dependency changes may download a large changed layer.
+- Admin dashboard actions can be slower than on a Pi 3/4/5.
 
-## WiFi Note
+Not normal:
 
-Raspberry Pi 2 B has no onboard WiFi. Use a USB WiFi adapter supported by Raspberry Pi OS, seed the primary WiFi during SD-card creation, and manage additional networks later from Admin -> WiFi Networks. Ethernet is useful for recovery, but the production install does not depend on the old public first-boot WiFi setup page.
+- The Pi disappearing from the network.
+- SSH timing out while ping works.
+- Repeated undervoltage warnings.
+- SD card errors in `dmesg`.
 
-If you use a WiFi range extender/repeater, local inbound access such as SSH or `http://<pi-ip>:5000` can fail even when ping works. Some repeaters, including basic TP-Link RE models such as TL-WA850RE, use MAC proxy/translation. Disable NetworkManager WiFi MAC randomization on the Pi before relying on a repeater path.
+## WiFi And Repeater Notes
 
-Create this file:
+Raspberry Pi 2 B has no onboard WiFi. If using WiFi, use a supported USB WiFi adapter and seed the primary WiFi during SD-card creation. Ethernet is useful for recovery but not required for production.
+
+If you use a WiFi range extender/repeater, local inbound access such as SSH or `http://<pi-ip>:5000` can fail even when ping works. Some repeaters, including basic TP-Link RE models such as TL-WA850RE, use MAC proxy/translation.
+
+Disable NetworkManager WiFi MAC randomization on the Pi before relying on a repeater path:
 
 ```bash
 sudo mkdir -p /etc/NetworkManager/conf.d
@@ -107,22 +107,30 @@ Reboot:
 sudo reboot
 ```
 
-After reconnecting, verify the active network and test inbound access from another machine:
+After reconnecting, verify:
 
 ```bash
 hostname -I
 iw dev wlan0 link
+ip addr show wlan0
 ssh pi@<pi-ip>
 curl -I http://<pi-ip>:5000
 ```
 
-For repeaters, also check that the repeater DHCP server is disabled, access control/blacklist is disabled, and firmware is current. If the main router shows a different MAC address for the Pi than `ip addr show wlan0`, that can be normal repeater proxy behavior. Reserve the IP against the MAC address that the main router actually sees.
+For repeaters, also check that:
 
-## Troubleshooting Notes
+- repeater DHCP server is disabled
+- access control/blacklist is disabled
+- firmware is current
+- the main router reserves the IP against the MAC address it actually sees
+
+If the main router shows a different MAC address for the Pi than `ip addr show wlan0`, that can be normal repeater proxy behavior.
+
+## Troubleshooting
 
 ### Docker install fails with `trixie Release` missing
 
-If you accidentally ran Docker's convenience script and saw this error:
+If you accidentally ran Docker's convenience script and saw:
 
 ```text
 E: The repository 'https://download.docker.com/linux/raspbian trixie Release' does not have a Release file.
@@ -141,7 +149,7 @@ sudo reboot
 
 ### Locale warnings during `apt`
 
-Warnings such as `Setting locale failed` are not fatal. They usually mean the language/locale selected in Raspberry Pi Imager was not generated fully yet. The app and Docker install can continue.
+Warnings such as `Setting locale failed` are not fatal. They usually mean the language/locale selected in Raspberry Pi Imager was not generated fully yet.
 
 ### SSH host key changed
 
@@ -162,8 +170,6 @@ docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml ps
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=200 app
 ```
 
-First image pull and first startup can take several minutes on a Pi 2 B. Let Docker finish pulling layers before judging startup time.
-
 Open:
 
 ```text
@@ -175,5 +181,3 @@ Default login:
 ```text
 admin / admin12345
 ```
-
-Change the admin password immediately.

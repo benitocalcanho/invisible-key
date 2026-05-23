@@ -1,47 +1,67 @@
-# Raspberry Pi 3 B+ Notes
+# Raspberry Pi 3 B/B+ Notes
 
-Use [INSTALLATION.md](INSTALLATION.md) for the canonical install instructions. This file keeps only Raspberry Pi 3 B+ notes that are easy to lose in the general guide.
+Use [INSTALLATION.md](INSTALLATION.md) for the canonical install guide. This file only contains Raspberry Pi 3 B/B+-specific notes.
 
-## Hardware Baseline
+## What Is Different On Pi 3 B/B+
 
-- Raspberry Pi 3 Model B/B+
-- Raspberry Pi OS Lite, preferably 64-bit
-- 16 GB or larger microSD card
-- 5V / 2.5A power supply
+- Raspberry Pi OS Lite 64-bit is preferred.
+- Raspberry Pi OS Lite 32-bit also works if you need it.
+- Onboard WiFi is available, but Ethernet is still useful for recovery.
+- Use a 5V / 2.5A power supply.
+- Use a good 16 GB or larger microSD card.
 
-Avoid Raspberry Pi OS Full on small SD cards. The desktop image leaves little room for Docker images and logs.
+The app is intended to run 24/7 on Pi 3 B/B+. Apply the no-sleep commands from [INSTALLATION.md](INSTALLATION.md#3-keep-the-pi-awake-247).
 
-## OS Setup Notes
+## OS Selection
 
-After first boot:
+In Raspberry Pi Imager:
+
+| Field | Value |
+|---|---|
+| Device | Raspberry Pi 3 |
+| OS | Raspberry Pi OS Lite 64-bit preferred |
+| Hostname | `invisible-key` |
+| WiFi | Configure primary SSID/password |
+| SSH | Enabled |
+
+Avoid Raspberry Pi OS Full/Desktop on small SD cards. The desktop image leaves less room for Docker images and logs.
+
+## Docker Install
+
+Use Docker's convenience script:
 
 ```bash
-sudo apt update
-sudo apt upgrade -y
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker "$USER"
+sudo reboot
 ```
 
-For a Pi that should run 24/7:
+After reboot:
 
 ```bash
-sudo raspi-config nonint do_blanking 1
-sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
-sudo systemctl disable NetworkManager-wait-online.service
+docker --version
+docker compose version
 ```
 
-Pi OS Lite usually expands the filesystem automatically on first boot.
+## App Install Command
 
-## Install Command
-
-On the Pi, use the production image plus the Pi overlay:
+Use the same Raspberry Pi compose command as every other Pi:
 
 ```bash
+git clone https://github.com/benitocalcanho/invisible-key.git
+cd invisible-key
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
 ```
 
 The Pi overlay is required for:
+
 - GPIO relays
 - reed sensor monitoring
 - dashboard WiFi management through host NetworkManager
+
+## WiFi Notes
+
+Pi 3 onboard WiFi is usually fine for production. If connecting through a repeater/range extender and SSH or app access fails while ping works, use the MAC randomization note in [INSTALL_PI2B.md](INSTALL_PI2B.md#wifi-and-repeater-notes). That issue is not Pi 2-specific; it can affect any Pi behind some repeaters.
 
 ## Quick Checks
 
