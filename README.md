@@ -4,6 +4,16 @@ Automated guest access for shared buildings. No keypads, no visible door changes
 
 Invisible Key is a plug-and-play **Raspberry Pi** web app for short-term rental hosts. Guests get a simple phone-friendly page to unlock building and apartment doors, while the admin dashboard manages users, WiFi, door images, logs, ngrok, email, and automatic guest rotation from a private iCal URL.
 
+Invisible Key is designed for real-world Raspberry Pi deployments: home WiFi, repeaters, mobile routers, CGNAT, rented apartments, and networks where you cannot configure the router. It does not require a public IP address, router configuration, port forwarding, a private domain, or paid remote-access subscriptions.
+
+The normal setup uses free services in this order:
+
+1. **Raspberry Pi Connect** for first setup and remote shell access.
+2. **ngrok** for the guest/admin web URL.
+3. **Tailscale** for private admin access and recovery.
+
+That means the app can run almost anywhere the Raspberry Pi has internet access.
+
 ## Start Here
 
 For a real Raspberry Pi installation, use the canonical guide:
@@ -69,20 +79,12 @@ admin / admin12345
 
 Change the admin password immediately, then configure iCal, ngrok, email, WiFi networks, and door images in the admin dashboard.
 
-Remote access uses three free services, in this order:
-
-1. **Raspberry Pi Connect** — free remote shell for first setup and maintenance.
-2. **ngrok** — free public URL for both guests and admins.
-3. **Tailscale** — free private IP for admin shell access and admin-only dashboard access.
-
-Tailscale is optional but recommended. Create a free account at [tailscale.com](https://tailscale.com), then install it on the Pi:
+Optional but recommended: create a free Tailscale account at [tailscale.com](https://tailscale.com), then install it on the Pi:
 
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up
 ```
-
-These services do not require paid subscriptions for the normal Invisible Key setup. That is a fundamental advantage of the app: it works with almost any internet connection, including CGNAT/mobile/repeater-style networks, without router configuration, port forwarding, or a private domain. Guest access, admin access, and recovery access can all work for free.
 
 ## Features
 
