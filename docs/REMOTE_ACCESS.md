@@ -13,13 +13,13 @@ Avoid maintainer-specific timezone assumptions in remote operations and support 
 | **Raspberry Pi Connect** | Admin | Browser-based remote shell for host maintenance/recovery |
 | **Tailscale** | Admin (optional) | Private VPN for direct SSH/private IP access |
 
-ngrok is the primary path for app access. Raspberry Pi Connect is the recommended simple fallback for remote shell access to the host machine. Tailscale remains optional if you want a private VPN.
+ngrok is the primary path for app access after setup. Admins should normally use the same ngrok URL that guests use. Raspberry Pi Connect is the recommended first-install and recovery shell path. Tailscale remains optional if you want a private VPN.
 
 ---
 
 ## Raspberry Pi Connect (Admin Shell)
 
-Raspberry Pi Connect provides remote shell access through a browser and works without router port forwarding. It is a good replacement for Tailscale when you only need occasional admin/recovery shell access to the Pi.
+Raspberry Pi Connect provides remote shell access through a browser and works without router port forwarding. During first boot, use the **Connect** button on the Raspberry Pi Connect website to open a shell without needing to know the Pi IP address. It is also a good replacement for Tailscale when you only need occasional admin/recovery shell access to the Pi.
 
 Set it up during Raspberry Pi Imager if the option is available:
 
@@ -35,12 +35,19 @@ loginctl enable-linger
 ```
 
 Use Raspberry Pi Connect for:
+- first installation before you know the Pi IP address
 - checking Docker logs
 - pulling app updates
 - restarting the container
 - fixing WiFi/ngrok/app settings when you are not on the local network
 
-Raspberry Pi Connect does not expose the web app to guests. Keep ngrok for guest/admin web access.
+To print the first local dashboard URL from a Connect shell:
+
+```bash
+printf 'Open this on your computer while on the same network: http://%s:5000\n' "$(hostname -I | awk '{print $1}')"
+```
+
+Raspberry Pi Connect does not expose the web app to guests. Keep ngrok for guest/admin web access after setup.
 
 ---
 
@@ -123,11 +130,11 @@ When the Flask app starts, it automatically:
 2. Opens an HTTPS tunnel to `localhost:5000`
 3. The public URL is shown in **Admin Dashboard → Overview**
 
-Users access:
+Admins and guests access:
 ```
 https://yourname.ngrok-free.app/login
 ```
-They log in with their credentials and see only their own dashboard.
+After ngrok is configured, use this as the normal admin URL too. Use the local `http://<pi-ip>:5000` URL mainly for same-network troubleshooting.
 
 ### Sharing URLs with Users
 

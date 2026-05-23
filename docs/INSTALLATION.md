@@ -50,16 +50,16 @@ Raspberry Pi Connect is a useful recovery/admin shell. It does not replace ngrok
 
 Boot the Pi and wait a minute or two for first-boot setup.
 
-Connect by SSH:
+If you enabled Raspberry Pi Connect in Imager, go to the Raspberry Pi Connect website and press **Connect** for this device. That opens a browser shell; you do not need to know the Pi IP address just to begin installation.
+
+SSH is still useful as a fallback when you are on the same network:
 
 ```bash
 ssh pi@invisible-key.local
 ssh pi@<pi-ip>
 ```
 
-Or use Raspberry Pi Connect remote shell.
-
-Install basic tools:
+Install basic tools in the Raspberry Pi Connect shell or SSH shell:
 
 ```bash
 sudo apt update
@@ -148,11 +148,19 @@ Do not add `privileged: true` for normal operation. The Pi overlay maps only the
 
 ## 6. First Login
 
-Open:
+Get the Pi's local dashboard URL from the Raspberry Pi Connect shell or SSH shell:
+
+```bash
+printf 'Open this on your computer while on the same network: http://%s:5000\n' "$(hostname -I | awk '{print $1}')"
+```
+
+Open the printed URL, for example:
 
 ```text
-http://<pi-ip>:5000
+http://192.168.1.123:5000
 ```
+
+This local IP is mainly for first setup and troubleshooting. After ngrok is configured, use the ngrok URL as the normal admin URL too. That is the same stable URL guests will use.
 
 Default login:
 
@@ -192,9 +200,11 @@ Only bootstrap values belong in environment variables:
 
 Use:
 
-- **ngrok** for guest/admin web access from outside the local network
-- **Raspberry Pi Connect** for recovery/admin remote shell
+- **ngrok** for the normal guest and admin web URL
+- **Raspberry Pi Connect** for first install, recovery, and admin remote shell
 - **Tailscale** optionally for private VPN SSH/admin access
+
+After you save the ngrok token/domain in the dashboard and the tunnel starts, switch your own admin habit to the ngrok URL. Keep the local IP URL for troubleshooting on the same network.
 
 If you use Tailscale in production, disable key expiry for the Pi in the Tailscale admin dashboard after enrollment so it does not require re-authentication later.
 

@@ -25,6 +25,8 @@ Use **Raspberry Pi Imager** first:
 - enable SSH
 - enable Raspberry Pi Connect if offered
 
+On first boot, use the **Connect** button on the Raspberry Pi Connect website to open a shell. You can install without knowing the Pi IP address first.
+
 On the Pi:
 
 ```bash
@@ -51,11 +53,13 @@ cd invisible-key
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
 ```
 
-Open:
+Print the first local dashboard URL from the Raspberry Pi Connect shell:
 
-```text
-http://<pi-ip>:5000
+```bash
+printf 'Open this on your computer while on the same network: http://%s:5000\n' "$(hostname -I | awk '{print $1}')"
 ```
+
+Open the printed local URL for first login. After ngrok is configured, use the ngrok URL as the normal admin and guest URL.
 
 Default login:
 
