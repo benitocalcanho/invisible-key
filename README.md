@@ -1,114 +1,59 @@
 # Invisible Key — Automated Guest Access
 
-Automated guest access for shared buildings. No keypads, no visible door changes.
+Invisible Key is a Raspberry Pi web app for short-term rental hosts who need reliable guest access without keypads, visible door changes, router configuration, or paid remote-access subscriptions.
 
-Invisible Key is a plug-and-play **Raspberry Pi** web app for short-term rental hosts. Guests get a simple phone-friendly page to unlock building and apartment doors, while the admin dashboard manages users, WiFi, door images, logs, ngrok, email, and automatic guest rotation from a private iCal URL.
+Guests get a simple phone-friendly page to unlock the building and apartment doors. You get an admin dashboard for users, logs, WiFi, door photos, ngrok, email alerts, and automatic guest/cleaner rotation from a private Google Calendar iCal link.
 
-Invisible Key is designed for real-world Raspberry Pi deployments: home WiFi, repeaters, mobile routers, CGNAT, rented apartments, and networks where you cannot configure the router. It does not require a public IP address, router configuration, port forwarding, a private domain, or paid remote-access subscriptions.
+## Why It Works Almost Anywhere
 
-The normal setup uses free services in this order:
+Invisible Key is built for real homes and rented apartments: normal WiFi, repeaters, mobile routers, CGNAT, and networks where you cannot touch the router.
 
-1. **Raspberry Pi Connect** for first setup and remote shell access.
-2. **ngrok** for the guest/admin web URL.
-3. **Tailscale** for private admin access and recovery.
+It does **not** require:
 
-That means the app can run almost anywhere the Raspberry Pi has internet access.
+- a public IP address
+- router configuration
+- port forwarding
+- a private domain
+- paid remote-access subscriptions
+
+The normal setup uses free services:
+
+1. **Raspberry Pi Connect** — first setup and emergency shell access.
+2. **ngrok** — the public guest/admin web URL.
+3. **Tailscale** — optional private admin access and recovery.
+
+## What It Does
+
+- **Guest door page** — full-screen phone layout with one-tap unlock buttons.
+- **Admin dashboard** — users, audit log, door log, button history, WiFi, ngrok, calendar, email, and door images.
+- **Calendar automation** — iCal sync creates guest accounts at check-in and removes them at check-out.
+- **Cleaner handover** — cleaner access is active between guest stays and suspended during guest stays.
+- **Always-on master users** — master users can always unlock doors and are not controlled by the calendar.
+- **GPIO relay control** — Raspberry Pi GPIO pulses the door relays.
+- **Door sensor log** — optional reed sensor records open/closed changes.
+- **SD-card conscious logging** — container log rotation and database log retention are enabled by default.
 
 ## Start Here
 
-For a real Raspberry Pi installation, use the canonical guide:
+For a normal Raspberry Pi installation, follow these in order:
 
-- [docs/INSTALLATION.md](docs/INSTALLATION.md) — main Raspberry Pi install guide
-- [docs/INSTALL_PI2B.md](docs/INSTALL_PI2B.md) — Raspberry Pi 2 B notes: 32-bit OS, USB WiFi, slower pulls
-- [docs/INSTALL_PI3B.md](docs/INSTALL_PI3B.md) — Raspberry Pi 3 B/B+ notes
-- [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md) — repeatable update runbook
-- [docs/HARDWARE.md](docs/HARDWARE.md) — relay and reed sensor wiring
-- [docs/REMOTE_ACCESS.md](docs/REMOTE_ACCESS.md) — Raspberry Pi Connect, ngrok, Tailscale
+1. [Raspberry Pi Setup For Normal Users](docs/RASPBERRY_PI_SETUP.md)
+2. [First Admin Dashboard Setup](docs/ADMIN_DASHBOARD_SETUP.md)
+3. [Hardware Wiring](docs/HARDWARE.md)
 
-## Quick Raspberry Pi Install
+Useful after setup:
 
-Use **Raspberry Pi Imager** first:
+- [Remote Access](docs/REMOTE_ACCESS.md) — Raspberry Pi Connect, ngrok, and Tailscale.
+- [Update Runbook](docs/DEPLOY_PI.md) — how to update the app later.
+- [Raspberry Pi 2 B Notes](docs/INSTALL_PI2B.md) — 32-bit OS, USB WiFi, slower pulls.
+- [Raspberry Pi 3 B/B+ Notes](docs/INSTALL_PI3B.md) — Pi 3-specific notes.
 
-- Raspberry Pi 2 B / older 32-bit boards: Raspberry Pi OS Lite 32-bit
-- Raspberry Pi 3/4/5: Raspberry Pi OS Lite 64-bit recommended
-- set hostname, username/password, WiFi SSID/password, WiFi country, timezone, and keyboard
-- enable SSH
-- enable Raspberry Pi Connect if offered
+Developer and reference docs are separate:
 
-On first boot, use the **Connect** button on the Raspberry Pi Connect website to open a shell. You can install without knowing the Pi IP address first.
-
-On the Pi:
-
-```bash
-sudo apt update
-sudo apt upgrade -y
-sudo apt install -y git curl ca-certificates
-```
-
-Install Docker:
-
-```bash
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker "$USER"
-sudo reboot
-```
-
-Raspberry Pi 2 B exception: use [docs/INSTALL_PI2B.md](docs/INSTALL_PI2B.md) for Docker installation. On Raspberry Pi OS Lite 32-bit Trixie, use `docker.io` / `docker-compose` from Raspberry Pi OS packages instead of Docker's upstream convenience script.
-
-After reboot:
-
-```bash
-git clone https://github.com/benitocalcanho/invisible-key.git
-cd invisible-key
-docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
-```
-
-Print the first local dashboard URL from the Raspberry Pi Connect shell:
-
-```bash
-printf 'Open this on your computer while on the same network: http://%s:5000\n' "$(hostname -I | awk '{print $1}')"
-```
-
-Open the printed local URL for first login. After ngrok is configured, use the ngrok URL as the normal admin and guest URL.
-
-Default login:
-
-```text
-admin / admin12345
-```
-
-Change the admin password immediately, then configure iCal, ngrok, email, WiFi networks, and door images in the admin dashboard.
-
-Optional but recommended: create a free Tailscale account at [tailscale.com](https://tailscale.com), then install it on the Pi:
-
-```bash
-curl -fsSL https://tailscale.com/install.sh | sh
-sudo tailscale up
-```
-
-## Features
-
-- **Guest dashboard** — full-screen phone-friendly door cards with one-tap unlock buttons
-- **Automatic guest accounts** — daily iCal sync creates/removes guest accounts around check-in/check-out times
-- **Cleaner handover** — cleaner account is active between guest stays and suspended during guest stays
-- **Role-based access** — `admin`, `master`, `cleaner`, `guest`
-- **Admin dashboard** — users, audit log, door log, button history, WiFi, ngrok, calendar, email, door images
-- **Settings GUI** — configure operational secrets in the browser after install
-- **GPIO relay control** — default 5-second relay pulse for each door
-- **Door sensor log** — optional GPIO23 reed switch records open/closed changes
-- **Remote access** — Raspberry Pi Connect for setup shell, ngrok for the guest/admin URL, Tailscale for private admin access
-- **SD-card conscious logs** — Docker log rotation and app log retention defaults
-
-## How Calendar Sync Works
-
-The scheduler runs in the Raspberry Pi's local timezone unless `APP_TIMEZONE` explicitly overrides it.
-
-| Time | Action |
-|---|---|
-| Check-out, default `12:00` | Re-checks iCal. If no event is active today, deletes calendar-created guest accounts and activates/creates cleaner. If an event still spans today, the guest account remains active. |
-| Check-in, default `14:00` | Fetches iCal, finds events active today, creates/updates the guest account, and deactivates cleaner. |
-
-Event title convention: the first word becomes the guest username. Password mode is configured in the dashboard.
+- [Developer Notes](docs/DEVELOPMENT.md)
+- [API Reference](docs/API.md)
+- [Google Calendar Details](docs/GOOGLE_CALENDAR.md)
+- [GPIO Pinout](docs/GPIO_PINOUT.md)
 
 ## Hardware Defaults
 
@@ -119,44 +64,7 @@ Event title convention: the first word becomes the guest username. Password mode
 | Door reed sensor signal | GPIO23 | 16 |
 | Reed sensor ground | GND | 14 |
 
-Use [docs/HARDWARE.md](docs/HARDWARE.md) for wiring details.
-
-## Updates
-
-On the Pi:
-
-```bash
-cd ~/invisible-key
-git pull --ff-only origin main
-docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml pull app
-docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d --force-recreate app
-```
-
-See [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md) for the full deployment checklist.
-
-## Desktop Development
-
-Desktop/no-GPIO mode is for development only:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
-
-For frontend/backend hot reload, see [docs/INSTALLATION.md](docs/INSTALLATION.md#desktop-development).
-
-## Project Structure
-
-```text
-invisible-key/
-├── backend/              # Flask API, SQLite models, services, GPIO, scheduler
-├── frontend/             # Vue 3 SPA
-├── docs/                 # Installation, deployment, hardware, remote access
-├── scripts/              # Optional/manual setup helpers
-├── systemd/              # Optional/manual service units
-├── docker-compose.prod.yml
-├── docker-compose.pi.yml
-└── Dockerfile
-```
+Use [docs/HARDWARE.md](docs/HARDWARE.md) before wiring anything.
 
 ## License
 

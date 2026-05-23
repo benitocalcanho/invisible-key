@@ -130,6 +130,4 @@ print("closed" if sensor.is_pressed else "open")
 
 ## WiFi Hardware Note
 
-The main Docker deployment does not require hotspot mode. Seed WiFi with Raspberry Pi Imager and manage additional networks from Admin -> WiFi Networks.
-
-The legacy optional hotspot script may try to use a virtual `uap0` AP interface alongside `wlan0`. If you intentionally use that script and hotspot mode is unstable, use a USB WiFi adapter with AP mode support.
+Seed the primary WiFi network during SD-card creation with Raspberry Pi Imager. After first login, manage additional WiFi networks from **Admin Dashboard -> WLAN/WiFi Networks**.

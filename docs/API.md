@@ -136,20 +136,7 @@ Remove pin configuration.
 
 ## WiFi (`/api/wifi`)
 
-### GET `/wifi/status` — admin only
-Current WiFi connection state.
-
-### GET `/wifi/scan` — admin only
-List available WiFi networks (sorted by signal strength).
-
-### POST `/wifi/connect` — admin only
-```json
-{ "ssid": "MyNetwork", "passphrase": "wifipassword" }
-```
-Connect to a WiFi network. Production WiFi management should use the admin WiFi endpoints below.
-
-### POST `/wifi/hotspot/stop` — admin only
-Tear down the uap0 hotspot.
+WiFi is seeded during SD-card creation with Raspberry Pi Imager. After installation, admins manage additional saved networks through the admin dashboard.
 
 ### GET `/wifi/admin/status` — admin only
 Current connection status (device, state, active connection name).

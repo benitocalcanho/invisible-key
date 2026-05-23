@@ -11,6 +11,9 @@ No Google API credentials, no OAuth, no JSON files — just a URL you paste once
 
 ## Setup
 
+For a beginner-friendly Gmail example, see [ADMIN_DASHBOARD_SETUP.md](ADMIN_DASHBOARD_SETUP.md).
+
+
 ### 1 — Get your private iCal URL
 
 **Google Calendar:**

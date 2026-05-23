@@ -1,6 +1,6 @@
 # Raspberry Pi 2 B Notes
 
-Use [INSTALLATION.md](INSTALLATION.md) for the canonical install guide. This file only contains Raspberry Pi 2 B-specific notes.
+Use [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md) for the main install walkthrough. This file only contains Raspberry Pi 2 B-specific notes.
 
 ## What Is Different On Pi 2 B
 
@@ -11,7 +11,7 @@ Use [INSTALLATION.md](INSTALLATION.md) for the canonical install guide. This fil
 - Use a reliable 5V / 2A or better power supply.
 - Use a good 16 GB or larger microSD card.
 
-The app is still intended to run 24/7 on Pi 2 B. Apply the no-sleep commands from [INSTALLATION.md](INSTALLATION.md#3-keep-the-pi-awake-247).
+The app is still intended to run 24/7 on Pi 2 B. Apply the no-sleep commands from [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#4-keep-the-pi-awake).
 
 ## OS Selection
 
