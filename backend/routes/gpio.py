@@ -130,7 +130,7 @@ def pulse_pin(pin_number):
     user = User.query.get(user_id)
     if not user or not user.is_active:
         return jsonify({"error": "User is inactive."}), 403
-    if user.role not in ("admin", "user", "cleaner", "guest"):
+    if user.role not in ("admin", "master", "user", "cleaner", "guest"):
         return jsonify({"error": "Insufficient permissions."}), 403
     if user.role == "guest" and guest_stay_has_ended(user.valid_until, app=current_app):
         return jsonify({"error": "Your stay has ended."}), 403

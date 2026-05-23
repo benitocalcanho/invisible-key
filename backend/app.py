@@ -82,6 +82,7 @@ def create_app(config_class=Config):
         _seed_admin(app)
         _seed_gpio(app)
         _migrate_calendar_users_to_guest(app)
+        _migrate_manual_users_to_master(app)
         reed_sensor.init_app(app)
         # Stop any running ngrok tunnels/processes before starting a new tunnel
         try:
@@ -244,6 +245,18 @@ def _migrate_calendar_users_to_guest(app):
     if updated:
         db.session.commit()
         app.logger.info("Migrated %d calendar user(s) to guest role.", updated)
+
+
+def _migrate_manual_users_to_master(app):
+    """Rename the legacy always-active manual role from user to master."""
+    updated = (
+        User.query
+        .filter(User.role == "user")
+        .update({"role": "master"}, synchronize_session=False)
+    )
+    if updated:
+        db.session.commit()
+        app.logger.info("Migrated %d legacy user role account(s) to master role.", updated)
 
 
 def _migrate_add_valid_until(app):

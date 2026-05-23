@@ -19,7 +19,12 @@ from utils.timezone_utils import get_effective_timezone_info, local_now
 # Blueprint for all /api/admin endpoints
 admin_bp = Blueprint("admin", __name__)
 # Allowed roles for admin endpoints
-ALLOWED_ROLES = ("admin", "user", "cleaner", "guest")
+ALLOWED_ROLES = ("admin", "master", "cleaner", "guest")
+
+
+def _normalize_role(role):
+    """Map the legacy always-active user role to master."""
+    return "master" if role == "user" else role
 
 ######################################################################
 # Button press logging (frontend virtual button)
@@ -196,12 +201,12 @@ def create_user():
     data = request.get_json(silent=True) or {}
     username = data.get("username", "").strip().lower()
     password = data.get("password", "")
-    role = data.get("role", "user")
+    role = _normalize_role(data.get("role", "master"))
 
     if not username or not password:
         return jsonify({"error": "username and password are required."}), 400
     if role not in ALLOWED_ROLES:
-        return jsonify({"error": "role must be one of: admin, user, cleaner, guest."}), 400
+        return jsonify({"error": "role must be one of: admin, master, cleaner, guest."}), 400
     if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists."}), 409
 
@@ -248,9 +253,10 @@ def update_user(user_id):
         user.email = User.build_internal_email(new_username)
 
     if "role" in data:
-        if data["role"] not in ALLOWED_ROLES:
-            return jsonify({"error": "role must be one of: admin, user, cleaner, guest."}), 400
-        user.role = data["role"]
+        role = _normalize_role(data["role"])
+        if role not in ALLOWED_ROLES:
+            return jsonify({"error": "role must be one of: admin, master, cleaner, guest."}), 400
+        user.role = role
     if "is_active" in data:
         user.is_active = bool(data["is_active"])
     if "password" in data:

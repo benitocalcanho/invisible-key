@@ -41,7 +41,7 @@ async function handleLogin() {
     const user = await authStore.login(cleanUsername, password.value)
     if (user.role === 'admin') {
       router.push('/admin')
-    } else if (['cleaner', 'guest', 'user'].includes(user.role)) {
+    } else if (['cleaner', 'guest', 'master', 'user'].includes(user.role)) {
       router.push('/guest')
     } else {
       router.push('/dashboard')

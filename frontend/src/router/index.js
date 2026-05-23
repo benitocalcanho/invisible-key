@@ -10,7 +10,7 @@ import GpioControl from '../views/GpioControl.vue'
 
 function homeForRole(role) {
   if (role === 'admin') return '/admin/users'
-  if (['cleaner', 'guest', 'user'].includes(role)) return '/guest'
+  if (['cleaner', 'guest', 'master', 'user'].includes(role)) return '/guest'
   return '/dashboard'
 }
 
@@ -32,7 +32,7 @@ const routes = [
   {
     path: '/guest',
     component: GuestDashboard,
-    meta: { requiresAuth: true, allowedRoles: ['guest', 'cleaner', 'user'] },
+    meta: { requiresAuth: true, allowedRoles: ['guest', 'cleaner', 'master', 'user'] },
   },
   {
     path: '/gpio',
@@ -75,8 +75,9 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresRole && authStore.user?.role !== to.meta.requiresRole) {
     return homeForRole(authStore.user?.role)
   }
-  if (to.path === '/dashboard' && authStore.isLoggedIn && authStore.user?.role !== 'user') {
-    return homeForRole(authStore.user?.role)
+  if (to.path === '/dashboard' && authStore.isLoggedIn) {
+    const home = homeForRole(authStore.user?.role)
+    if (home !== '/dashboard') return home
   }
   if (to.path === '/login' && authStore.isLoggedIn) {
     return homeForRole(authStore.user?.role)

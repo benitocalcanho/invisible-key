@@ -91,7 +91,7 @@ sudo tailscale up
 - **Guest dashboard** — full-screen phone-friendly door cards with one-tap unlock buttons
 - **Automatic guest accounts** — daily iCal sync creates/removes guest accounts around check-in/check-out times
 - **Cleaner handover** — cleaner account is active between guest stays and suspended during guest stays
-- **Role-based access** — `admin`, `user`, `cleaner`, `guest`
+- **Role-based access** — `admin`, `master`, `cleaner`, `guest`
 - **Admin dashboard** — users, audit log, door log, button history, WiFi, ngrok, calendar, email, door images
 - **Settings GUI** — configure operational secrets in the browser after install
 - **GPIO relay control** — default 5-second relay pulse for each door

@@ -62,7 +62,7 @@
         <input v-model="newUser.username" :placeholder="$t('username')" required />
         <input v-model="newUser.password" type="password" :placeholder="$t('password_min')" required />
         <select v-model="newUser.role">
-          <option value="user">{{ $t('user') }}</option>
+          <option value="master">{{ $t('master') }}</option>
           <option value="guest">{{ $t('guest') }}</option>
           <option value="cleaner">{{ $t('cleaner') }}</option>
           <option value="admin">{{ $t('admin') }}</option>
@@ -332,7 +332,7 @@ const doorUploadMsg = ref({ building_door: '', apartment_door: '' })
 const doorUploadErr = ref({ building_door: '', apartment_door: '' })
 const cacheBust = ref(Date.now())
 
-const newUser = ref({ username: '', password: '', role: 'user' })
+const newUser = ref({ username: '', password: '', role: 'master' })
 
 function goToTab(key) {
   router.push(`/admin/${slugByTab[key] || 'users'}`)
@@ -531,7 +531,7 @@ async function createUser() {
   createError.value = ''
   try {
     await api.post('/admin/users', newUser.value)
-    newUser.value = { username: '', password: '', role: 'user' }
+    newUser.value = { username: '', password: '', role: 'master' }
     showCreate.value = false
     await loadUsers()
   } catch (e) {

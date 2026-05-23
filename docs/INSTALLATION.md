@@ -176,7 +176,7 @@ After first login, configure operational settings in the admin dashboard.
 
 | Setting | Dashboard area |
 |---|---|
-| Admin/users/cleaner accounts | Users |
+| Admin/master/cleaner accounts | Users |
 | iCal URL | Calendar Sync |
 | Guest password mode | Calendar Sync |
 | Check-in / check-out times | Calendar Sync |

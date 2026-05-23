@@ -5,7 +5,7 @@
       <router-link v-if="authStore.user?.role === 'admin'" to="/admin">{{ $t('nav_admin') }}</router-link>
       <router-link v-if="authStore.user?.role === 'cleaner'" to="/guest">{{ $t('nav_cleaner') }}</router-link>
       <router-link v-if="authStore.user?.role === 'guest'" to="/guest">{{ $t('nav_guest') }}</router-link>
-      <router-link v-if="authStore.user?.role === 'user'" to="/dashboard">{{ $t('nav_dashboard') }}</router-link>
+      <router-link v-if="['master', 'user'].includes(authStore.user?.role)" to="/guest">{{ $t('nav_dashboard') }}</router-link>
       <router-link v-if="authStore.user?.role === 'admin'" to="/gpio">{{ $t('nav_gpio') }}</router-link>
       <button @click="handleLogout" class="logout">{{ $t('nav_signout') }}</button>
     </div>

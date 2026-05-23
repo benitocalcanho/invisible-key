@@ -14,7 +14,7 @@
       <tbody>
         <tr v-for="user in users" :key="user.id">
           <td>{{ user.username }}</td>
-          <td><span :class="['badge', user.role]">{{ user.role }}</span></td>
+          <td><span :class="['badge', roleClass(user.role)]">{{ roleLabel(user.role) }}</span></td>
           <td>
             <span :class="['badge', user.is_active ? 'active' : 'inactive']">
               {{ user.is_active ? 'Active' : 'Suspended' }}
@@ -38,9 +38,12 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import api from '../api.js'
 
 // Props
+const { t } = useI18n()
+
 const props = defineProps({
   // Array of user objects to display
   users: Array
@@ -52,6 +55,14 @@ const emit = defineEmits(['refresh'])
 // Format ISO date string as local date
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString()
+}
+
+function roleClass(role) {
+  return role === 'user' ? 'master' : role
+}
+
+function roleLabel(role) {
+  return t(role === 'user' ? 'master' : role)
 }
 
 // Toggle user active/suspended status
@@ -102,7 +113,7 @@ th, td { padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid #f0f0f
 th { background: #f8f9fa; font-weight: 600; color: #555; }
 .badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
 .badge.admin { background: #fde8e8; color: #c0392b; }
-.badge.user { background: #e8f4fd; color: #2980b9; }
+.badge.master { background: #e8f4fd; color: #2980b9; }
 .badge.cleaner { background: #fef3e8; color: #e67e22; }
 .badge.guest { background: #f0e8fd; color: #8e44ad; }
 .badge.active { background: #e8fde8; color: #27ae60; }

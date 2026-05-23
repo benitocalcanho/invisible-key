@@ -5,7 +5,7 @@ Fields:
     username: Unique username for login
     email: Unique email (not used for login, but required by DB)
     password_hash: Hashed password
-    role: User role ('admin', 'user', 'cleaner', 'guest')
+    role: User role ('admin', 'master', 'cleaner', 'guest')
     is_active: Is the user active
     created_at: UTC timestamp of creation
     created_by: How the account was created ('manual', 'calendar')
@@ -29,7 +29,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="user")  # User role: 'admin', 'user', 'cleaner', 'guest'
+    role = db.Column(db.String(20), nullable=False, default="master")  # User role: 'admin', 'master', 'cleaner', 'guest'
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     # Source of account creation: 'manual' (created by admin) or 'calendar' (auto-created from Google Calendar)

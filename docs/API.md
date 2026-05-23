@@ -41,7 +41,7 @@ List all users.
 
 ### POST `/admin/users`
 ```json
-{ "username": "jane", "password": "pass", "role": "user" }
+{ "username": "jane", "password": "pass", "role": "master" }
 ```
 `email` is optional and internally derived if omitted.
 
