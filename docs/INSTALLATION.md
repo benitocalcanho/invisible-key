@@ -19,7 +19,7 @@ Desktop/no-GPIO mode is documented at the end. For production Raspberry Pi insta
 | [INSTALL_PI3B.md](INSTALL_PI3B.md) | Pi 3 B/B+-specific notes |
 | [DEPLOY_PI.md](DEPLOY_PI.md) | Update/redeploy checklist |
 | [HARDWARE.md](HARDWARE.md) | Relay and reed switch wiring |
-| [REMOTE_ACCESS.md](REMOTE_ACCESS.md) | ngrok, Raspberry Pi Connect, Tailscale |
+| [REMOTE_ACCESS.md](REMOTE_ACCESS.md) | Raspberry Pi Connect, ngrok, Tailscale |
 
 ## 1. Prepare The SD Card
 
@@ -198,15 +198,24 @@ Only bootstrap values belong in environment variables:
 
 ## 8. Remote Access
 
-Use:
+Invisible Key uses three free remote-access services. This is the recommended order for every installation:
 
-- **ngrok** for the normal guest and admin web URL
-- **Raspberry Pi Connect** for first install, recovery, and admin remote shell
-- **Tailscale** optionally for private VPN SSH/admin access
+1. **Raspberry Pi Connect** — free remote shell for setting up the Raspberry Pi and maintaining it later. Use this first, before you even know the Pi IP address.
+2. **ngrok** — free public URL for both guests and admins. This becomes the normal app URL after setup.
+3. **Tailscale** — free private IP for admin shell access and admin-only dashboard access. This is optional but recommended as a second recovery/admin path.
+
+No paid subscription is required for the normal Invisible Key setup. This is a core advantage of the app: it works with almost any internet connection, including CGNAT/mobile/repeater-style networks, without router configuration, port forwarding, or a private domain. Guest access, admin access, and recovery access can all work for free.
 
 After you save the ngrok token/domain in the dashboard and the tunnel starts, switch your own admin habit to the ngrok URL. Keep the local IP URL for troubleshooting on the same network.
 
-If you use Tailscale in production, disable key expiry for the Pi in the Tailscale admin dashboard after enrollment so it does not require re-authentication later.
+To add Tailscale:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+Create/sign in with a free account at [tailscale.com](https://tailscale.com), follow the sign-in URL printed by `sudo tailscale up`, then disable key expiry for the Pi in the Tailscale admin dashboard so it does not require re-authentication later.
 
 See [REMOTE_ACCESS.md](REMOTE_ACCESS.md).
 

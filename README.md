@@ -13,7 +13,7 @@ For a real Raspberry Pi installation, use the canonical guide:
 - [docs/INSTALL_PI3B.md](docs/INSTALL_PI3B.md) — Raspberry Pi 3 B/B+ notes
 - [docs/DEPLOY_PI.md](docs/DEPLOY_PI.md) — repeatable update runbook
 - [docs/HARDWARE.md](docs/HARDWARE.md) — relay and reed sensor wiring
-- [docs/REMOTE_ACCESS.md](docs/REMOTE_ACCESS.md) — ngrok, Raspberry Pi Connect, Tailscale
+- [docs/REMOTE_ACCESS.md](docs/REMOTE_ACCESS.md) — Raspberry Pi Connect, ngrok, Tailscale
 
 ## Quick Raspberry Pi Install
 
@@ -69,6 +69,21 @@ admin / admin12345
 
 Change the admin password immediately, then configure iCal, ngrok, email, WiFi networks, and door images in the admin dashboard.
 
+Remote access uses three free services, in this order:
+
+1. **Raspberry Pi Connect** — free remote shell for first setup and maintenance.
+2. **ngrok** — free public URL for both guests and admins.
+3. **Tailscale** — free private IP for admin shell access and admin-only dashboard access.
+
+Tailscale is optional but recommended. Create a free account at [tailscale.com](https://tailscale.com), then install it on the Pi:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+These services do not require paid subscriptions for the normal Invisible Key setup. That is a fundamental advantage of the app: it works with almost any internet connection, including CGNAT/mobile/repeater-style networks, without router configuration, port forwarding, or a private domain. Guest access, admin access, and recovery access can all work for free.
+
 ## Features
 
 - **Guest dashboard** — full-screen phone-friendly door cards with one-tap unlock buttons
@@ -79,7 +94,7 @@ Change the admin password immediately, then configure iCal, ngrok, email, WiFi n
 - **Settings GUI** — configure operational secrets in the browser after install
 - **GPIO relay control** — default 5-second relay pulse for each door
 - **Door sensor log** — optional GPIO23 reed switch records open/closed changes
-- **Remote access** — ngrok for web access; Raspberry Pi Connect or Tailscale for admin recovery shell
+- **Remote access** — Raspberry Pi Connect for setup shell, ngrok for the guest/admin URL, Tailscale for private admin access
 - **SD-card conscious logs** — Docker log rotation and app log retention defaults
 
 ## How Calendar Sync Works
