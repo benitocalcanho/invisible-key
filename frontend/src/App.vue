@@ -34,5 +34,10 @@ body {
   color: #2c3e50;
 }
 .main-content { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
-.main-content.guest { padding: 0; max-width: 100%; }
+.main-content.guest {
+  padding: 0;
+  max-width: 100%;
+  min-height: 100dvh;
+  background: #42364d;
+}
 </style>

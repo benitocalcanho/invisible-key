@@ -77,11 +77,26 @@ loginctl enable-linger
 
 ## 4. Keep The Pi Awake
 
-Invisible Key controls door access, so the Pi should run 24/7.
+Raspberry Pi OS Lite normally does not sleep like a laptop. Invisible Key controls door access, so it should run 24/7; the commands below are optional hardening if you want to defensively disable Linux sleep/suspend targets.
+
+You can skip this step while testing. To check whether the Pi has actually suspended since boot, run:
+
+```bash
+journalctl -b | grep -Ei "PM: suspend|suspend entry|suspend exit|Starting System Suspend|Reached target.*suspend|hibernate|hybrid-sleep"
+```
+
+If that only shows skipped `systemd-hibernate-clear.service` messages, the Pi has not suspended.
+
+Optional hardening:
 
 ```bash
 sudo raspi-config nonint do_blanking 1
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+```
+
+Optional boot-speed tweak, unrelated to sleep:
+
+```bash
 sudo systemctl disable NetworkManager-wait-online.service
 ```
 

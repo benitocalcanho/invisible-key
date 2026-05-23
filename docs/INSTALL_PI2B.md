@@ -11,7 +11,7 @@ Use [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md) for the main install walkthro
 - Use a reliable 5V / 2A or better power supply.
 - Use a good 16 GB or larger microSD card.
 
-The app is still intended to run 24/7 on Pi 2 B. Apply the no-sleep commands from [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#4-keep-the-pi-awake).
+The app is still intended to run 24/7 on Pi 2 B. Raspberry Pi OS Lite normally stays awake, but see [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#4-keep-the-pi-awake) for optional sleep-target hardening and checks.
 
 ## OS Selection
 

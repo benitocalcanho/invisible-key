@@ -141,12 +141,18 @@ function progressAttr(door) {
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: 100dvh;       /* fills screen, respects mobile browser chrome */
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;   /* fills screen, respects mobile browser chrome */
+  height: 100dvh;
+  margin: 0 auto;
   position: relative;
+  overflow: hidden;
+  background: #1a1a2e;
 }
 
 .signout-btn {
-  position: fixed;
+  position: absolute;
   top: 0.9rem;
   right: 1rem;
   z-index: 200;
@@ -162,7 +168,8 @@ function progressAttr(door) {
 
 
 .door-card {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   background-color: #1a1a2e;
   display: flex;
   align-items: center;
@@ -241,5 +248,11 @@ function progressAttr(door) {
 .unlock-btn:active:not(:disabled) {
   transform: scale(0.96);
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+@media (min-width: 480px) {
+  .guest-page {
+    box-shadow: 0 0 36px rgba(0, 0, 0, 0.28);
+  }
 }
 </style>
