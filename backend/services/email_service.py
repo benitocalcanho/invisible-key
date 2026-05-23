@@ -36,3 +36,48 @@ def send_notification_email(subject: str, body: str):
     except Exception as e:
         print(f"[Email Debug] Exception: {e}")
         raise
+
+
+def format_button_notification_body(
+    *,
+    user,
+    button: str,
+    action: str = "Pressed",
+    pin_number=None,
+    request_meta=None,
+) -> str:
+    """Build a detailed plain-text notification for door button activity."""
+    from utils.timezone_utils import get_effective_timezone_info, local_now
+
+    meta = request_meta or {}
+    client = meta.get("client") or {}
+    local_time = local_now(current_app).isoformat(timespec="seconds")
+    timezone_info = get_effective_timezone_info(current_app)
+
+    lines = [
+        "Invisible Key button activity",
+        "",
+        f"Time: {local_time} ({timezone_info['name']})",
+        f"User: {getattr(user, 'username', 'Unknown')}",
+        f"Role: {getattr(user, 'role', 'Unknown')}",
+        f"Button: {button or 'Unknown'}",
+        f"Action: {action}",
+    ]
+
+    if pin_number is not None:
+        lines.append(f"GPIO pin: {pin_number}")
+
+    lines.extend([
+        "",
+        "Client details",
+        f"IP address: {meta.get('ip') or 'Unknown'}",
+        f"Device: {client.get('device') or 'Unknown'}",
+        f"OS: {client.get('os') or 'Unknown'}",
+        f"Browser: {client.get('browser') or 'Unknown'}",
+        f"Language: {client.get('language') or 'Unknown'}",
+        f"Accept-Language: {client.get('accept_language') or 'Unknown'}",
+        f"Request: {client.get('method') or 'Unknown'} {client.get('path') or 'Unknown'}",
+        f"User-Agent: {meta.get('user_agent') or 'Unknown'}",
+    ])
+
+    return "\n".join(lines)

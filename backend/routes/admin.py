@@ -8,7 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db
 from models.user import User
 from models.audit_log import AuditLog
-from services.audit_service import log_event
+from services.audit_service import get_request_metadata, log_event
 from services import ngrok_service
 from services.reed_sensor_service import reed_sensor
 from utils.decorators import current_user_or_response, require_roles
@@ -45,10 +45,15 @@ def log_button_press():
 
 
     # Send email notification in a background thread (non-blocking)
-    from services.email_service import send_notification_email
-    device = request.headers.get("User-Agent", "Unknown")
+    from services.email_service import format_button_notification_body, send_notification_email
+    request_meta = get_request_metadata()
     subject = f"[Invisible Key] {button} pressed by {user.username}"
-    body = f"User: {user.username}\nRole: {user.role}\nButton: {button}\nDevice: {device}"
+    body = format_button_notification_body(
+        user=user,
+        button=button,
+        action="Pressed",
+        request_meta=request_meta,
+    )
     import threading
     from flask import current_app
     app = current_app._get_current_object() if hasattr(current_app, '_get_current_object') else current_app

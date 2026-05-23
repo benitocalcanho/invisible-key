@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from flask import current_app
 
 from services import gpio_service
-from services.audit_service import log_event
+from services.audit_service import get_request_metadata, log_event
 from utils.decorators import require_roles
 from utils.guest_access import guest_stay_has_ended
 
@@ -68,9 +68,8 @@ def get_pin(pin_number):
 @jwt_required()
 @require_roles("admin")
 def toggle_pin(pin_number):
-    from flask import request
     from models.user import User
-    from services.email_service import send_notification_email
+    from services.email_service import format_button_notification_body, send_notification_email
     claims = get_jwt()
     role = claims.get("role")
     user_id = int(get_jwt_identity())
@@ -87,11 +86,16 @@ def toggle_pin(pin_number):
     user = User.query.get(user_id)
     if user and guest_stay_has_ended(user.valid_until, app=current_app):
         return jsonify({"error": "Your stay has ended."}), 403
-    device = request.headers.get("User-Agent", "Unknown")
     button_label = getattr(pin, "label", f"Pin {pin_number}")
     action = "Unlocked" if pin.state else "Locked"
     subject = f"[Invisible Key] {action} by {user.username}"
-    body = f"User: {user.username}\nRole: {user.role}\nButton: {button_label}\nPin: {pin_number}\nAction: {action}\nDevice: {device}"
+    body = format_button_notification_body(
+        user=user,
+        button=button_label,
+        action=action,
+        pin_number=pin_number,
+        request_meta=get_request_metadata(),
+    )
     try:
         send_notification_email(subject, body)
     except Exception as e:

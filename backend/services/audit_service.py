@@ -60,7 +60,7 @@ def _detect_language(accept_language: str) -> str:
     return first[:32] if first else "Unknown"
 
 
-def _request_metadata() -> Dict[str, Any]:
+def get_request_metadata() -> Dict[str, Any]:
     if not has_request_context():
         return {"ip": None, "user_agent": "", "client": {}}
 
@@ -75,10 +75,15 @@ def _request_metadata() -> Dict[str, Any]:
         "device": _detect_device(user_agent),
         "os": _detect_os(user_agent),
         "language": _detect_language(accept_language),
+        "accept_language": accept_language[:300],
         "path": request.path,
         "method": request.method,
     }
     return {"ip": ip, "user_agent": user_agent, "client": client}
+
+
+def _request_metadata() -> Dict[str, Any]:
+    return get_request_metadata()
 
 
 def log_event(
