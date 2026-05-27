@@ -11,7 +11,7 @@ Use [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md) for the main install walkthro
 - Use a reliable 5V / 2A or better power supply.
 - Use a good 16 GB or larger microSD card.
 
-The app is still intended to run 24/7 on Pi 2 B. Raspberry Pi OS Lite normally stays awake, but see [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#4-keep-the-pi-awake) for optional sleep-target hardening and checks.
+The app is still intended to run 24/7 on Pi 2 B. Disable WiFi power saving during setup; this is especially important with USB WiFi adapters. Raspberry Pi OS Lite normally stays awake, but see [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#5-keep-the-pi-awake) for optional sleep-target hardening and checks.
 
 ## OS Selection
 
@@ -80,6 +80,30 @@ Not normal:
 ## WiFi And Repeater Notes
 
 Raspberry Pi 2 B has no onboard WiFi. If using WiFi, use a supported USB WiFi adapter and seed the primary WiFi during SD-card creation. Ethernet is useful for recovery but not required for production.
+
+Disable WiFi power saving before relying on WiFi in production:
+
+```bash
+sudo mkdir -p /etc/NetworkManager/conf.d
+sudo tee /etc/NetworkManager/conf.d/wifi-powersave-off.conf >/dev/null <<'EOF'
+[connection]
+wifi.powersave = 2
+EOF
+
+sudo systemctl restart NetworkManager
+```
+
+Reconnect the saved network if needed and verify:
+
+```bash
+nmcli connection show
+sudo nmcli connection up "<saved-wifi-name>"
+iw dev wlan0 get power_save
+iw dev wlan0 link
+ip addr show wlan0
+```
+
+The expected result is `Power save: off`. If the Pi is powered on but disappears from WiFi, check this first.
 
 If you use a WiFi range extender/repeater, local inbound access such as SSH or `http://<pi-ip>:5000` can fail even when ping works. Some repeaters, including basic TP-Link RE models such as TL-WA850RE, use MAC proxy/translation.
 

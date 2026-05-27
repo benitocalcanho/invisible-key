@@ -35,7 +35,7 @@ The normal setup uses free services:
 
 ## Start Here
 
-For a normal Raspberry Pi installation, follow these in order:
+For a normal Raspberry Pi installation, follow these in order. The setup guide includes production WiFi hardening, including disabling WiFi power saving so the Pi does not silently drop off the network:
 
 1. [Raspberry Pi Setup For Normal Users](docs/RASPBERRY_PI_SETUP.md)
 2. [First Admin Dashboard Setup](docs/ADMIN_DASHBOARD_SETUP.md)
@@ -44,7 +44,9 @@ For a normal Raspberry Pi installation, follow these in order:
 Useful after setup:
 
 - [Remote Access](docs/REMOTE_ACCESS.md) — Raspberry Pi Connect, ngrok, and Tailscale.
+- [Intercom Wiring](docs/INTERCOM.md) — relay wiring for the intercom and 12V AC apartment opener.
 - [Update Runbook](docs/DEPLOY_PI.md) — how to update the app later.
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — emergency SSH unlock scripts, GPIO busy recovery, and health checks.
 - [Raspberry Pi 2 B Notes](docs/INSTALL_PI2B.md) — 32-bit OS, USB WiFi, slower pulls.
 - [Raspberry Pi 3 B/B+ Notes](docs/INSTALL_PI3B.md) — Pi 3-specific notes.
 

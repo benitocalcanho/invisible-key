@@ -70,6 +70,7 @@ def create_app(config_class=Config):
     with app.app_context():
         db.create_all()       # creates settings table first
         _migrate_add_valid_until(app)  # must run before any ORM queries
+        _migrate_remove_user_email(app)
         _load_db_settings(app)
         tz_info = get_effective_timezone_info(app=app)
         app.config["EFFECTIVE_TIMEZONE"] = tz_info["name"]
@@ -198,7 +199,6 @@ def _seed_admin(app):
     if not existing:
         admin = User(
             username=admin_username,
-            email=User.build_internal_email(admin_username),
             role="admin",
         )
         admin.set_password(admin_password)
@@ -269,6 +269,50 @@ def _migrate_add_valid_until(app):
             db.session.execute(text("ALTER TABLE users ADD COLUMN valid_until DATE"))
             db.session.commit()
             app.logger.info("Migration: added valid_until column to users table.")
+
+
+def _migrate_remove_user_email(app):
+    """Remove the legacy users.email column if an older SQLite DB still has it."""
+    from sqlalchemy import inspect, text
+    with app.app_context():
+        inspector = inspect(db.engine)
+        columns = [c["name"] for c in inspector.get_columns("users")]
+        if "email" not in columns:
+            return
+
+        db.session.remove()
+        with db.engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            conn.execute(text("PRAGMA foreign_keys=OFF"))
+            conn.execute(text("""
+                CREATE TABLE users_new (
+                    id INTEGER NOT NULL,
+                    username VARCHAR(80) NOT NULL,
+                    password_hash VARCHAR(128) NOT NULL,
+                    role VARCHAR(20) NOT NULL,
+                    is_active BOOLEAN NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    created_by VARCHAR(50) NOT NULL,
+                    calendar_event_id VARCHAR(200),
+                    valid_until DATE,
+                    PRIMARY KEY (id),
+                    UNIQUE (username)
+                )
+            """))
+            conn.execute(text("""
+                INSERT INTO users_new (
+                    id, username, password_hash, role, is_active, created_at,
+                    created_by, calendar_event_id, valid_until
+                )
+                SELECT
+                    id, username, password_hash, role, is_active, created_at,
+                    created_by, calendar_event_id, valid_until
+                FROM users
+            """))
+            conn.execute(text("DROP TABLE users"))
+            conn.execute(text("ALTER TABLE users_new RENAME TO users"))
+            conn.execute(text("CREATE INDEX ix_users_username ON users (username)"))
+            conn.execute(text("PRAGMA foreign_keys=ON"))
+        app.logger.info("Migration: removed legacy email column from users table.")
 
 
 if __name__ == "__main__":

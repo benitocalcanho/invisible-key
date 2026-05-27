@@ -3,7 +3,6 @@ User model — stores credentials and role information.
 Fields:
     id: Primary key
     username: Unique username for login
-    email: Unique email (not used for login, but required by DB)
     password_hash: Hashed password
     role: User role ('admin', 'master', 'cleaner', 'guest')
     is_active: Is the user active
@@ -13,7 +12,7 @@ Fields:
     audit_logs: Relationship to AuditLog
 """
 from datetime import datetime, timezone
-import re
+import unicodedata
 import bcrypt
 from models import db
 from utils.datetime_utils import utc_isoformat
@@ -27,7 +26,6 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="master")  # User role: 'admin', 'master', 'cleaner', 'guest'
     is_active = db.Column(db.Boolean, nullable=False, default=True)
@@ -42,10 +40,26 @@ class User(db.Model):
     audit_logs = db.relationship("AuditLog", backref="user", lazy="dynamic", cascade="all, delete-orphan")
 
     @staticmethod
-    def build_internal_email(username: str) -> str:
-        """Generate a deterministic internal email placeholder from a username."""
-        normalized = re.sub(r"[^a-z0-9._-]", "_", username.strip().lower())
-        return f"{normalized}@local.user"
+    def normalize_username(username: str) -> str:
+        """Normalize login names while keeping Unicode letters intact."""
+        return unicodedata.normalize("NFKC", username.strip()).casefold()
+
+    @classmethod
+    def find_by_username(cls, username: str):
+        """Find a user with Unicode-aware case-insensitive username matching."""
+        normalized = cls.normalize_username(username)
+        exact = cls.query.filter_by(username=normalized).first()
+        if exact:
+            return exact
+
+        ascii_case_match = cls.query.filter(db.func.lower(cls.username) == normalized).first()
+        if ascii_case_match:
+            return ascii_case_match
+
+        for user in cls.query.all():
+            if cls.normalize_username(user.username) == normalized:
+                return user
+        return None
 
     def minimum_password_length(self) -> int:
         return self.GUEST_MIN_PASSWORD_LENGTH if self.role == "guest" else self.MIN_PASSWORD_LENGTH

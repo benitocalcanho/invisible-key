@@ -167,7 +167,7 @@ Use this when the Pi may be moved to another apartment or network.
 3. Enter the WiFi password.
 4. Save the credentials.
 
-The Pi will connect automatically when that network is available.
+The Pi will connect automatically when that network is available. The operating system should already have WiFi power saving disabled from the Raspberry Pi setup guide; if the Pi later disappears from WiFi while still powered on, re-check `iw dev wlan0 get power_save`.
 
 ## 6. Upload Door Images
 

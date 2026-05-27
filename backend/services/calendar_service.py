@@ -8,6 +8,7 @@ single active guest account to that name.
 """
 import logging
 import re
+import unicodedata
 from datetime import date, datetime, time, timezone
 from typing import Optional, Dict
 
@@ -47,7 +48,8 @@ def parse_user_creation_event(title: str, keyword: str) -> Optional[Dict[str, st
 
 
 def normalize_username(raw_value: str) -> Optional[str]:
-    cleaned = re.sub(r"[^a-z0-9]+", "_", raw_value.strip().lower()).strip("_")
+    normalized = unicodedata.normalize("NFKC", raw_value.strip()).casefold()
+    cleaned = re.sub(r"[^\w]+", "_", normalized, flags=re.UNICODE).strip("_")
     if not cleaned:
         return None
     return cleaned[:50]
@@ -242,13 +244,12 @@ def sync_calendar_ical(app) -> dict:
             result["guests_deleted"] = len(old_guests)
             for old in old_guests:
                 db.session.delete(old)
-            cleaner_username = (Setting.get("CLEANER_USERNAME") or app.config.get("CLEANER_USERNAME", "cleaner")).lower()
+            cleaner_username = User.normalize_username(Setting.get("CLEANER_USERNAME") or app.config.get("CLEANER_USERNAME", "cleaner"))
             cleaner_password = Setting.get("CLEANER_PASSWORD") or app.config.get("CLEANER_PASSWORD", "cleaner12345")
             cleaners = User.query.filter_by(role="cleaner").all()
             if not cleaners:
                 cleaner = User(
                     username=cleaner_username,
-                    email=User.build_internal_email(cleaner_username),
                     role="cleaner",
                     created_by="manual",
                     is_active=True,
@@ -279,6 +280,7 @@ def sync_calendar_ical(app) -> dict:
         new_username = normalize_username(first_word)
         if not new_username:
             logger.warning("iCal sync: could not derive username from '%s'.", raw_name)
+            result["status"] = "error"
             result["error"] = f"Could not derive username from event title '{raw_name}'"
             return result
 
@@ -337,7 +339,6 @@ def sync_calendar_ical(app) -> dict:
         try:
             new_user = User(
                 username=new_username,
-                email=User.build_internal_email(new_username),
                 role="guest",
                 created_by="calendar",
                 valid_until=dt_end,
@@ -450,7 +451,6 @@ def sync_calendar(app) -> dict:
             try:
                 new_user = User(
                     username=parsed["username"],
-                    email=User.build_internal_email(parsed["username"]),
                     role="guest",
                     created_by="calendar",
                     calendar_event_id=event_id,
@@ -526,13 +526,12 @@ def checkout_guests(app) -> None:
             db.session.delete(g)
 
         # Activate cleaner if exists; create it if it doesn't
-        cleaner_username = (Setting.get("CLEANER_USERNAME") or cfg.get("CLEANER_USERNAME", "cleaner")).lower()
+        cleaner_username = User.normalize_username(Setting.get("CLEANER_USERNAME") or cfg.get("CLEANER_USERNAME", "cleaner"))
         cleaner_password = Setting.get("CLEANER_PASSWORD") or cfg.get("CLEANER_PASSWORD", "cleaner12345")
         cleaners = User.query.filter_by(role="cleaner").all()
         if not cleaners:
             new_cleaner = User(
                 username=cleaner_username,
-                email=User.build_internal_email(cleaner_username),
                 role="cleaner",
                 created_by="manual",
                 is_active=True,

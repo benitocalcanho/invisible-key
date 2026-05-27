@@ -43,7 +43,7 @@ No restart required. The next scheduled sync will use the new URL.
 
 ## Calendar Event Format
 
-The **first word** of the event title becomes the guest's username (lowercased, special characters replaced with `_`).
+The **first word** of the event title becomes the guest's username. Usernames are normalized for login, but Unicode letters are kept, so guest names such as `Лилия`, `민지`, `Renée`, and `Jörg` can be used directly. Leading/trailing spaces typed at login are ignored.
 
 **Guest password** is set by the dashboard setting under **Guest Password**:
 
@@ -57,6 +57,8 @@ The **first word** of the event title becomes the guest's username (lowercased, 
 | Title | Username | Password (last-word mode) |
 |-------|----------|--------------------------|
 | `Alice 0612` | `alice` | `0612` |
+| `Лилия 0612` | `лилия` | `0612` |
+| `민지 0612` | `민지` | `0612` |
 | `Smith family vacation 8523` | `smith` | `8523` |
 | `john` | `john` | — (use fixed password mode) |
 

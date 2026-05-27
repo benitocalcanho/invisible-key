@@ -61,10 +61,10 @@ The default relay outputs are:
 |---|---:|---:|---|
 | Building / street door | 11 | 17 | Relay IN1 |
 | Apartment door | 13 | 27 | Relay IN2 |
-| Relay power | 2 | 5V | Relay board VCC |
+| Relay power | 4 | 5V | Relay board VCC |
 | Relay ground | 6 | GND | Relay board GND |
 
-The GPIO service treats the relay board as active-low. A door unlock action pulses the configured output for 5 seconds.
+The GPIO service treats the relay board as active-low. A door unlock action pulses the configured output for 5 seconds. See [INTERCOM.md](INTERCOM.md) for the building intercom and 12V AC apartment opener wiring.
 
 ## Power
 
@@ -130,4 +130,4 @@ print("closed" if sensor.is_pressed else "open")
 
 ## WiFi Hardware Note
 
-Seed the primary WiFi network during SD-card creation with Raspberry Pi Imager. After first login, manage additional WiFi networks from **Admin Dashboard -> WLAN/WiFi Networks**.
+Seed the primary WiFi network during SD-card creation with Raspberry Pi Imager. After first login, manage additional WiFi networks from **Admin Dashboard -> WLAN/WiFi Networks**. For production, disable NetworkManager WiFi power saving in the Raspberry Pi setup guide so the Pi does not stay powered on while silently dropping off WiFi.

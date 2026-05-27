@@ -8,7 +8,7 @@ The app creates GPIO17, GPIO27, and GPIO23 automatically on startup. The dashboa
 
 | Physical pin | BCM GPIO | Function | Notes |
 |---:|---:|---|---|
-| 2 | 5V | Relay power | Relay board VCC |
+| 4 | 5V | Relay power | Relay board VCC |
 | 6 | GND | Relay ground | Relay board GND |
 | 11 | 17 | Building / street door relay | Output to relay IN1 |
 | 13 | 27 | Apartment door relay | Output to relay IN2 |

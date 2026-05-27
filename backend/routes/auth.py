@@ -11,7 +11,6 @@ from flask_jwt_extended import (
 from flask import current_app
 
 from models.user import User
-from models import db
 from services.audit_service import log_event
 from utils.guest_access import guest_stay_has_ended
 from utils.decorators import current_user_or_response
@@ -63,7 +62,7 @@ def _clear_failed_logins(key) -> None:
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
-    username = data.get("username", "").strip().lower()
+    username = User.normalize_username(data.get("username", ""))
     password = data.get("password", "")
 
     if not username or not password:
@@ -74,8 +73,7 @@ def login():
         log_event("login_rate_limited", detail={"username": username})
         return jsonify({"error": "Too many failed login attempts. Try again later."}), 429
 
-    # Case-insensitive username lookup
-    user = User.query.filter(db.func.lower(User.username) == username).first()
+    user = User.find_by_username(username)
 
     if not user or not user.is_active or not user.check_password(password):
         _record_failed_login(attempt_key)

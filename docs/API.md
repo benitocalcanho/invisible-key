@@ -43,7 +43,6 @@ List all users.
 ```json
 { "username": "jane", "password": "pass", "role": "master" }
 ```
-`email` is optional and internally derived if omitted.
 
 ### GET `/admin/users/:id`
 ### PATCH `/admin/users/:id`

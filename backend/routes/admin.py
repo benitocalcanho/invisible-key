@@ -204,7 +204,7 @@ def list_users():
 @_admin_required
 def create_user():
     data = request.get_json(silent=True) or {}
-    username = data.get("username", "").strip().lower()
+    username = User.normalize_username(data.get("username", ""))
     password = data.get("password", "")
     role = _normalize_role(data.get("role", "master"))
 
@@ -212,14 +212,13 @@ def create_user():
         return jsonify({"error": "username and password are required."}), 400
     if role not in ALLOWED_ROLES:
         return jsonify({"error": "role must be one of: admin, master, cleaner, guest."}), 400
-    if User.query.filter_by(username=username).first():
+    if User.find_by_username(username):
         return jsonify({"error": "Username already exists."}), 409
 
     admin_id = int(get_jwt_identity())
     try:
         new_user = User(
             username=username,
-            email=User.build_internal_email(username),
             role=role,
             created_by="manual",
         )
@@ -248,14 +247,13 @@ def update_user(user_id):
     admin_id = int(get_jwt_identity())
 
     if "username" in data:
-        new_username = data["username"].strip().lower()
+        new_username = User.normalize_username(data["username"])
         if not new_username:
             return jsonify({"error": "username cannot be empty."}), 400
-        existing = User.query.filter(db.func.lower(User.username) == new_username).first()
+        existing = User.find_by_username(new_username)
         if existing and existing.id != user.id:
             return jsonify({"error": "Username already exists."}), 409
         user.username = new_username
-        user.email = User.build_internal_email(new_username)
 
     if "role" in data:
         role = _normalize_role(data["role"])
@@ -446,32 +444,29 @@ def update_settings():
 
     updated = []
 
-    cleaner_username = data.get("CLEANER_USERNAME", "").strip()
+    cleaner_username = User.normalize_username(data.get("CLEANER_USERNAME", ""))
     cleaner_password = data.get("CLEANER_PASSWORD", "").strip()
     # If either cleaner field is present, require both
     if ("CLEANER_USERNAME" in data or "CLEANER_PASSWORD" in data):
         if not cleaner_username or not cleaner_password:
             return jsonify({"error": "Both cleaner username and password are required."}), 400
-        from models.user import User
         # Remove all other cleaner accounts
         for other in User.query.filter(User.role == "cleaner", User.username != cleaner_username):
             db.session.delete(other)
         # Check for username conflict
-        existing = User.query.filter_by(username=cleaner_username).first()
+        existing = User.find_by_username(cleaner_username)
         if existing and existing.role != "cleaner":
             return jsonify({"error": "Username already exists for a non-cleaner account."}), 409
         cleaner = User.query.filter_by(role="cleaner").first()
         if not cleaner:
             cleaner = User(
                 username=cleaner_username,
-                email=User.build_internal_email(cleaner_username),
                 role="cleaner",
                 created_by="manual",
             )
             db.session.add(cleaner)
         else:
             cleaner.username = cleaner_username
-            cleaner.email = User.build_internal_email(cleaner_username)
         try:
             cleaner.set_password(cleaner_password)
         except ValueError as exc:

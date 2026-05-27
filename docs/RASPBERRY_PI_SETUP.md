@@ -75,7 +75,50 @@ For Raspberry Pi Connect shell access after reboots, enable lingering:
 loginctl enable-linger
 ```
 
-## 4. Keep The Pi Awake
+## 4. Disable WiFi Power Saving
+
+This step is important for production, especially on Raspberry Pi 2 B with a USB WiFi adapter and on any Pi connected through a repeater/range extender. WiFi power saving can leave the Pi powered on but disconnected from the router. That breaks SSH, ngrok, Tailscale-over-WiFi, and the guest page.
+
+Run this once:
+
+```bash
+sudo mkdir -p /etc/NetworkManager/conf.d
+sudo tee /etc/NetworkManager/conf.d/wifi-powersave-off.conf >/dev/null <<'EOF'
+[connection]
+wifi.powersave = 2
+EOF
+
+sudo systemctl restart NetworkManager
+```
+
+Reconnect WiFi if needed:
+
+```bash
+nmcli connection show
+sudo nmcli connection up "<saved-wifi-name>"
+```
+
+Check that power saving is off:
+
+```bash
+iw dev wlan0 get power_save
+iw dev wlan0 link
+ip addr show wlan0
+```
+
+The expected result is:
+
+```text
+Power save: off
+```
+
+If `wlan0` is not the WiFi interface name, check the name with:
+
+```bash
+nmcli device status
+```
+
+## 5. Keep The Pi Awake
 
 Raspberry Pi OS Lite normally does not sleep like a laptop. Invisible Key controls door access, so it should run 24/7; the commands below are optional hardening if you want to defensively disable Linux sleep/suspend targets.
 
@@ -100,7 +143,7 @@ Optional boot-speed tweak, unrelated to sleep:
 sudo systemctl disable NetworkManager-wait-online.service
 ```
 
-## 5. Install Docker
+## 6. Install Docker
 
 ### Raspberry Pi 3/4/5
 
@@ -132,7 +175,7 @@ docker compose version
 
 If `docker compose` is unavailable but `docker-compose` works, use `docker-compose` in the commands below.
 
-## 6. Install Invisible Key
+## 7. Install Invisible Key
 
 ```bash
 git clone https://github.com/benitocalcanho/invisible-key.git
@@ -142,7 +185,7 @@ docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
 
 The first pull can take several minutes, especially on a Raspberry Pi 2 B.
 
-## 7. Open The Admin Dashboard
+## 8. Open The Admin Dashboard
 
 Print the local dashboard URL:
 
@@ -162,7 +205,7 @@ Change the admin password immediately.
 
 The local IP is mainly for first setup and troubleshooting. After ngrok is configured, use the ngrok URL as your normal admin URL too.
 
-## 8. Configure The Dashboard
+## 9. Configure The Dashboard
 
 Now follow [First Admin Dashboard Setup](ADMIN_DASHBOARD_SETUP.md).
 
@@ -176,7 +219,7 @@ That guide covers:
 - door images and phone previews
 - final testing
 
-## 9. Optional But Recommended: Tailscale
+## 10. Optional But Recommended: Tailscale
 
 Tailscale gives you a private admin IP for SSH and dashboard access. It can substitute Raspberry Pi Connect for shell recovery and helps if ngrok has a problem.
 
@@ -189,7 +232,7 @@ sudo tailscale up
 
 Open the sign-in URL printed by the command. In the Tailscale dashboard, disable key expiry for the Pi so it does not require re-authentication later.
 
-## 10. Basic Checks
+## 11. Basic Checks
 
 Check the app:
 
@@ -217,8 +260,8 @@ docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d --force
 
 More detailed update steps are in [DEPLOY_PI.md](DEPLOY_PI.md).
 
-## 11. WiFi And Repeater Note
+## 12. WiFi And Repeater Note
 
-Seed the primary WiFi during SD-card creation. Add or remove later networks from **Admin Dashboard -> WLAN/WiFi Networks**.
+Seed the primary WiFi during SD-card creation. Add or remove later networks from **Admin Dashboard -> WLAN/WiFi Networks**. Keep WiFi power saving disabled as described in step 4; this is production hardening, not an optional cosmetic tweak.
 
 If the Pi connects through a WiFi repeater/range extender and local SSH or `http://<pi-ip>:5000` fails while ping works, disable WiFi MAC randomization on the Pi. See [Raspberry Pi 2 B Notes](INSTALL_PI2B.md#wifi-and-repeater-notes). The same fix can apply to Pi 3/4/5 behind some repeaters.

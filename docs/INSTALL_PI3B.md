@@ -10,7 +10,7 @@ Use [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md) for the main install walkthro
 - Use a 5V / 2.5A power supply.
 - Use a good 16 GB or larger microSD card.
 
-The app is intended to run 24/7 on Pi 3 B/B+. Raspberry Pi OS Lite normally stays awake, but see [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#4-keep-the-pi-awake) for optional sleep-target hardening and checks.
+The app is intended to run 24/7 on Pi 3 B/B+. Disable WiFi power saving during setup. Raspberry Pi OS Lite normally stays awake, but see [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#5-keep-the-pi-awake) for optional sleep-target hardening and checks.
 
 ## OS Selection
 
@@ -61,7 +61,9 @@ The Pi overlay is required for:
 
 ## WiFi Notes
 
-Pi 3 onboard WiFi is usually fine for production. If connecting through a repeater/range extender and SSH or app access fails while ping works, use the MAC randomization note in [INSTALL_PI2B.md](INSTALL_PI2B.md#wifi-and-repeater-notes). That issue is not Pi 2-specific; it can affect any Pi behind some repeaters.
+Pi 3 onboard WiFi is usually fine for production, but still disable WiFi power saving as shown in [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md#4-disable-wifi-power-saving). If the Pi is powered on but disappears from WiFi, check `iw dev wlan0 get power_save` first.
+
+If connecting through a repeater/range extender and SSH or app access fails while ping works, use the MAC randomization note in [INSTALL_PI2B.md](INSTALL_PI2B.md#wifi-and-repeater-notes). That issue is not Pi 2-specific; it can affect any Pi behind some repeaters.
 
 ## Quick Checks
 
