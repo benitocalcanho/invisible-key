@@ -36,6 +36,10 @@ frontend/.vite/
 *.swo
 *~
 
+# Local AI-agent instructions (not part of the public project)
+agents.md
+claude.md
+
 # Logs
 logs/
 *.log
