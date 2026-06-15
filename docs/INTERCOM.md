@@ -2,6 +2,14 @@
 
 This note documents the actual relay wiring used for Invisible Key.
 
+Use [REQUIRED_HARDWARE.md](REQUIRED_HARDWARE.md) for the parts list before buying or wiring components.
+
+## Door Compatibility Disclaimer
+
+Invisible Key is designed for installations where the door already has an electric opener, electric strike, or intercom door-release circuit. It only closes relay contacts for a few seconds.
+
+For the apartment door, this wiring fits doors that can be opened electrically from the outside once the opener is energized. This is common in Germany, Switzerland, the UK, and some other buildings. If the door is locked by a manual key-turned deadbolt, or if someone must turn a handle from outside, this relay wiring is not enough by itself.
+
 ## Raspberry Pi To Relay Board
 
 The relay module is powered from the Raspberry Pi 5V header pins. Physical pins 2 and 4 are both 5V; this installation uses physical pin 4 because it sits next to physical pin 6 / GND.

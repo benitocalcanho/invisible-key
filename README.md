@@ -4,6 +4,8 @@ Invisible Key is a Raspberry Pi web app for short-term rental hosts who need rel
 
 Guests get a simple phone-friendly page to unlock the building and apartment doors. You get an admin dashboard for users, logs, WiFi, door photos, ngrok, email alerts, and automatic guest/cleaner rotation from a private Google Calendar iCal link.
 
+**Door compatibility disclaimer:** Invisible Key is designed for doors that already have an electric opener, electric strike, or intercom door-release circuit. It is suitable for apartment doors that can be opened electrically from the outside once the opener is energized, common in Germany, Switzerland, the UK, and some other buildings. It does not turn a key, move a manual deadbolt, pull a handle, or replace a motorized smart lock.
+
 ## Why It Works Almost Anywhere
 
 Invisible Key is built for real homes and rented apartments: normal WiFi, repeaters, mobile routers, CGNAT, and networks where you cannot touch the router.
@@ -39,11 +41,13 @@ For a normal Raspberry Pi installation, follow these in order. The setup guide i
 
 1. [Raspberry Pi Setup For Normal Users](docs/RASPBERRY_PI_SETUP.md)
 2. [First Admin Dashboard Setup](docs/ADMIN_DASHBOARD_SETUP.md)
-3. [Hardware Wiring](docs/HARDWARE.md)
+3. [Required Hardware](docs/REQUIRED_HARDWARE.md)
+4. [Hardware Wiring](docs/HARDWARE.md)
 
 Useful after setup:
 
 - [Remote Access](docs/REMOTE_ACCESS.md) — Raspberry Pi Connect, ngrok, and Tailscale.
+- [Required Hardware](docs/REQUIRED_HARDWARE.md) — parts list for the Pi, relays, apartment opener, power supplies, and wiring.
 - [Intercom Wiring](docs/INTERCOM.md) — relay wiring for the intercom and 12V AC apartment opener.
 - [Update Runbook](docs/DEPLOY_PI.md) — how to update the app later.
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — emergency SSH unlock scripts, GPIO busy recovery, and health checks.

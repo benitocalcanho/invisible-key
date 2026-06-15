@@ -2,7 +2,14 @@
 
 This document covers the physical wiring used by Invisible Key. The app uses BCM GPIO numbering in code and in the admin UI.
 
+Use [REQUIRED_HARDWARE.md](REQUIRED_HARDWARE.md) for the parts list.
 Use [GPIO_PINOUT.md](GPIO_PINOUT.md) for the compact pin table.
+
+## Door Compatibility Disclaimer
+
+Invisible Key is designed for installations where the door already has an electric opener, electric strike, or intercom door-release circuit. The app pulses relays for a few seconds; it does not mechanically unlock a door.
+
+For the apartment door, this setup fits doors that can be opened electrically from the outside once the opener is energized. This is common in Germany, Switzerland, the UK, and some other buildings. If the apartment door requires a key turn or a handle action from outside, this relay setup is not enough by itself.
 
 ## Raspberry Pi Header
 

@@ -9,7 +9,33 @@
       </div>
       <div class="field">
           <label for="password">{{ $t('password') }}</label>
-        <input id="password" v-model="password" type="password" autocomplete="current-password" required />
+        <div class="password-control">
+          <input
+            id="password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            required
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+            :title="showPassword ? 'Hide password' : 'Show password'"
+            @click="showPassword = !showPassword"
+          >
+            <svg v-if="!showPassword" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m3 3 18 18" />
+              <path d="M10.6 10.6A2.9 2.9 0 0 0 12 15a3 3 0 0 0 2.4-1.2" />
+              <path d="M7.5 7.8C4.3 9.5 2.5 12 2.5 12s3.5 6 9.5 6c1.7 0 3.1-.5 4.4-1.2" />
+              <path d="M13.7 6.2C18.7 7 21.5 12 21.5 12a16 16 0 0 1-2.3 2.8" />
+            </svg>
+          </button>
+        </div>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
       <button type="submit" :disabled="loading">
@@ -29,6 +55,7 @@ const router = useRouter()
 
 const username = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
 
@@ -79,6 +106,49 @@ h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: #1a1a2e; }
   border-radius: 6px; font-size: 1rem; transition: border-color 0.2s;
 }
 .field input:focus { outline: none; border-color: #0f3460; }
+.password-control {
+  position: relative;
+}
+.password-control input {
+  padding-right: 2.75rem;
+}
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #57606f;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background 0.2s, color 0.2s;
+}
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  background: #f0f3f7;
+  color: #0f3460;
+  outline: none;
+}
+.password-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.password-toggle svg circle {
+  fill: none;
+}
 button {
   width: 100%; padding: 0.75rem; background: #0f3460; color: white;
   border: none; border-radius: 6px; font-size: 1rem; cursor: pointer;
@@ -86,6 +156,11 @@ button {
 }
 button:hover:not(:disabled) { background: #16213e; }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
+button.password-toggle:hover:not(:disabled),
+button.password-toggle:focus-visible {
+  background: #f0f3f7;
+  color: #0f3460;
+}
 .safety-notice {
   background: #fff4e5;
   color: #7a3b00;

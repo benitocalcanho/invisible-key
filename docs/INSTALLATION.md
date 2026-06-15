@@ -28,6 +28,7 @@ The full step-by-step version is here: [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETU
 |---|---|
 | [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md) | Main beginner Raspberry Pi walkthrough |
 | [ADMIN_DASHBOARD_SETUP.md](ADMIN_DASHBOARD_SETUP.md) | First dashboard setup with ngrok, Gmail SMTP, and Google Calendar iCal |
+| [REQUIRED_HARDWARE.md](REQUIRED_HARDWARE.md) | Parts list for Pi, relays, apartment opener, power supplies, and wiring |
 | [HARDWARE.md](HARDWARE.md) | Relay and reed sensor wiring |
 | [INTERCOM.md](INTERCOM.md) | Relay wiring for the intercom and 12V AC apartment opener |
 | [REMOTE_ACCESS.md](REMOTE_ACCESS.md) | Raspberry Pi Connect, ngrok, and Tailscale |
