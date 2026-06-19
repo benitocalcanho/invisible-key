@@ -32,10 +32,10 @@
           </span>
           <button
             v-if="pin.direction === 'output'"
-            @click="gpioStore.pulsePin(pin.pin_number, 20)"
+            @click="gpioStore.pulsePin(pin.pin_number, 5)"
             :class="['toggle-btn', pin.state ? 'on' : 'off']"
           >
-            Unlock for 20 seconds
+            Unlock for 5 seconds
           </button>
           <span v-else class="direction-badge">{{ $t('input_badge') }}</span>
         </div>

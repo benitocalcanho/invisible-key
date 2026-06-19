@@ -20,6 +20,7 @@ The app creates GPIO17, GPIO27, and GPIO23 automatically on startup. The dashboa
 - Physical pin: board/header pin number
 - BCM GPIO: GPIO number used in code, gpiozero, and dashboard pin configuration
 - Relay outputs use active-low relay board behavior in `gpio_service.py`
+- Admin dashboard relay buttons pulse output pins for 5 seconds, then the backend forces the relay off.
 
 ## Reed Sensor Notes
 

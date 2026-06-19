@@ -22,7 +22,7 @@ export const useGpioStore = defineStore('gpio', () => {
     }
   }
 
-  async function pulsePin(pinNumber, duration = 20) {
+  async function pulsePin(pinNumber, duration = 5) {
     const { data } = await api.post(`/gpio/pins/${pinNumber}/pulse`, { duration })
     const idx = pins.value.findIndex(p => p.pin_number === pinNumber)
     if (idx !== -1) pins.value[idx] = data

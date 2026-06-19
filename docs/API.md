@@ -122,7 +122,7 @@ Explicitly set an output pin on or off.
 ```
 
 ### POST `/gpio/pins/:pin_number/pulse`
-Momentarily pulse a relay output, then force it off server-side. This is the narrow door-open endpoint used by the guest dashboard. It requires an active authenticated user; expired guest accounts are rejected.
+Momentarily pulse a relay output, then force it off server-side. This is the narrow door-open endpoint used by the guest dashboard and the admin GPIO dashboard. It requires an active authenticated user; expired guest accounts are rejected. If `duration` is omitted, the server uses 5 seconds. Requested durations are clamped server-side.
 
 ```json
 { "duration": 5 }
