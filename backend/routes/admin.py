@@ -433,7 +433,7 @@ def get_settings():
 @admin_bp.route("/settings", methods=["PATCH"])
 @_admin_required
 def update_settings():
-    """Persist one or more settings. Empty strings are ignored (keeps existing value).
+    """Persist one or more settings. Most empty strings keep the existing value.
     Special handling for cleaner account: update or create the single cleaner user.
     """
     from flask import current_app
@@ -482,7 +482,7 @@ def update_settings():
         if key not in SETTINGS_SCHEMA or key.startswith("CLEANER_"):
             continue
         value = str(value).strip() if value is not None else ""
-        if not value:
+        if not value and key != "NGROK_STATIC_DOMAIN":
             continue  # empty field = keep existing, don't overwrite with blank
         Setting.set(key, value)
         current_app.config[key] = value  # take effect immediately without restart

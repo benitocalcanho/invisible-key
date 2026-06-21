@@ -208,12 +208,16 @@ async function saveSection(section) {
   saved.value = null
   sectionError.value = { ...sectionError.value, [section.id]: null }
 
-  // Build payload: include all fields from this section that have a value in form
+  // Build payload: include all fields from this section that have a value in form.
+  // NGROK_STATIC_DOMAIN is intentionally clearable so admins can switch from a
+  // reserved domain to a random ngrok URL when hot-swapping auth tokens.
   const payload = {}
   for (const key of section.keys) {
     const raw = form.value[key]
     const v = raw === undefined || raw === null ? '' : String(raw)
-    if (v.trim()) {
+    if (key === 'NGROK_STATIC_DOMAIN') {
+      payload[key] = v.trim()
+    } else if (v.trim()) {
       payload[key] = v.trim()
     }
   }
