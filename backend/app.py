@@ -183,7 +183,7 @@ def _load_db_settings(app):
     Called once at startup so services pick up GUI-saved values immediately.
     """
     for row in Setting.query.all():
-        if row.value:
+        if row.value is not None:
             app.config[row.key] = row.value
     app.logger.debug("DB settings loaded into app.config.")
 
