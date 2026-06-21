@@ -9,6 +9,7 @@ Architecture:
 import threading
 import logging
 import os
+import subprocess
 import time
 from typing import Optional
 from flask import current_app
@@ -39,6 +40,15 @@ def _ngrok_path() -> Optional[str]:
     return path if os.path.exists(path) else None
 
 
+def _stop_ngrok_processes() -> None:
+    """Kill any ngrok process so token/domain changes cannot reuse old auth."""
+    script = os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "stop_ngrok.sh")
+    try:
+        subprocess.run(["bash", script], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as exc:
+        logger.warning("Error killing ngrok processes: %s", exc)
+
+
 def _retry_later() -> None:
     global _next_retry_at, _retry_delay
     _next_retry_at = time.monotonic() + _retry_delay
@@ -61,6 +71,10 @@ def start_tunnel(port: int = 5000, force: bool = False) -> Optional[str]:
     global _tunnel
 
     with _tunnel_lock:
+        if force:
+            _stop_ngrok_processes()
+            _tunnel = None
+
         if not force and time.monotonic() < _next_retry_at:
             wait_seconds = int(_next_retry_at - time.monotonic())
             logger.info("ngrok restart deferred for %ss after previous failure.", wait_seconds)
@@ -120,6 +134,7 @@ def stop_tunnel() -> None:
                 logger.warning("Error stopping ngrok tunnel: %s", exc)
             finally:
                 _tunnel = None
+        _stop_ngrok_processes()
 
 
 def get_public_url() -> Optional[str]:

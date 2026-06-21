@@ -3,8 +3,8 @@
 
 set -e
 
-# Kill any running ngrok processes
-pkill -f ngrok || true
+# Kill any running ngrok processes without matching this script name.
+pkill -x ngrok || true
 
 # Optionally, use ngrok CLI to stop tunnels (if ngrok is running as a service or in the background)
 if command -v ngrok &>/dev/null; then
