@@ -2,6 +2,7 @@
   <div class="guest-page">
     <!-- Floating sign-out button -->
     <button class="signout-btn" @click="logout">{{ $t('signout') }}</button>
+    <p v-if="unlockError" class="unlock-error">{{ unlockError }}</p>
     <div class="door-card">
       <img
         v-if="imageUrl('building_door')"
@@ -16,7 +17,7 @@
           class="unlock-btn"
           :class="{ unlocking: active === 'building' }"
           :style="active === 'building' ? `--progress: ${progress}%` : ''"
-          :disabled="active !== null"
+          :disabled="active !== null || pending !== null"
           @click="unlock('building')"
         >
           {{ active === 'building' ? $t('push_door') : '🔓 ' + $t('unlock_door') }}
@@ -38,7 +39,7 @@
           class="unlock-btn"
           :class="{ unlocking: active === 'apartment' }"
           :style="active === 'apartment' ? `--progress: ${progress}%` : ''"
-          :disabled="active !== null"
+          :disabled="active !== null || pending !== null"
           @click="unlock('apartment')"
         >
           {{ active === 'apartment' ? $t('push_door') : '🔓 ' + $t('unlock_door') }}
@@ -61,6 +62,8 @@ const authStore = useAuthStore()
 const DURATION = 5000  // ms — relay pulse duration for all doors
 const active = ref(null)   // 'building' | 'apartment' | null
 const progress = ref(100)  // 100 → 0 over DURATION ms
+const pending = ref(null)
+const unlockError = ref('')
 
 onMounted(async () => {
   try {
@@ -96,20 +99,37 @@ function imageStyle(key) {
 }
 
 async function unlock(door) {
-  if (active.value !== null) return
-  active.value = door
-  progress.value = 100
+  if (active.value !== null || pending.value !== null) return
+  pending.value = door
+  unlockError.value = ''
   const duration = DURATION
 
-  // Fire-and-forget: log button press and trigger GPIO without blocking the UI
+  // Fire-and-forget: log button press without blocking the unlock request.
   api.post('/admin/audit/button_press', { button: door }).catch(() => {})
 
-  // Trigger GPIO relay: building → pin 17, apartment → pin 27
+  // Trigger GPIO relay: building -> pin 17, apartment -> pin 27.
+  // The success animation starts only after the backend accepts the pulse.
   const pinMap = { building: 17, apartment: 27 }
   const pin = pinMap[door]
-  if (pin) {
-    api.post(`/gpio/pins/${pin}/pulse`, { duration: duration / 1000 }).catch(() => {})
+  if (!pin) {
+    pending.value = null
+    return
   }
+
+  try {
+    await api.post(`/gpio/pins/${pin}/pulse`, { duration: duration / 1000 })
+  } catch (err) {
+    unlockError.value = err.response?.data?.error || 'Unlock failed. Try again.'
+    pending.value = null
+    setTimeout(() => {
+      if (unlockError.value) unlockError.value = ''
+    }, 5000)
+    return
+  }
+
+  pending.value = null
+  active.value = door
+  progress.value = 100
 
   const start = performance.now()
   const tick = (now) => {
@@ -164,6 +184,24 @@ function progressAttr(door) {
   font-size: 0.85rem;
   cursor: pointer;
   backdrop-filter: blur(4px);
+}
+
+.unlock-error {
+  position: absolute;
+  top: 3.8rem;
+  left: 1rem;
+  right: 1rem;
+  z-index: 210;
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  color: #fff;
+  background: rgba(165, 42, 42, 0.92);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
 }
 
 

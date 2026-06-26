@@ -143,11 +143,23 @@ def pulse_pin(pin_number):
     requested = data.get("duration", 5)
     try:
         duration = min(max(float(requested), 0.1), MAX_PULSE_SECONDS)
+        current_app.logger.info(
+            "GPIO pulse start requested: pin=%s duration=%s user_id=%s role=%s",
+            pin_number,
+            duration,
+            user_id,
+            user.role,
+        )
         pin = gpio_service.set_pin_state(pin_number, True)
     except (TypeError, ValueError) as exc:
+        current_app.logger.warning("GPIO pulse rejected: pin=%s error=%s", pin_number, exc)
         return jsonify({"error": str(exc)}), 400
     except LookupError as exc:
+        current_app.logger.warning("GPIO pulse pin missing: pin=%s error=%s", pin_number, exc)
         return jsonify({"error": str(exc)}), 404
+    except Exception as exc:
+        current_app.logger.exception("GPIO pulse failed while turning on: pin=%s", pin_number)
+        return jsonify({"error": "GPIO pulse failed."}), 500
 
     app = current_app._get_current_object()
 
@@ -156,11 +168,13 @@ def pulse_pin(pin_number):
         with app.app_context():
             try:
                 gpio_service.set_pin_state(pin_number, False)
+                app.logger.info("GPIO pulse ended: pin=%s duration=%s", pin_number, duration)
                 log_event("gpio_pulse_ended", detail={"pin": pin_number, "duration": duration})
             except Exception as exc:
-                app.logger.warning("Failed to end GPIO%s pulse: %s", pin_number, exc)
+                app.logger.exception("Failed to end GPIO%s pulse: %s", pin_number, exc)
 
     threading.Thread(target=turn_off_later, daemon=True).start()
+    current_app.logger.info("GPIO pulse accepted: pin=%s duration=%s", pin_number, duration)
     log_event("gpio_pulse_started", user_id=user_id, detail={"pin": pin_number, "duration": duration})
     return jsonify({**pin.to_dict(), "pulse_duration": duration}), 200
 

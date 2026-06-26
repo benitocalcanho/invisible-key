@@ -82,6 +82,13 @@ def create_app(config_class=Config):
         )
         _seed_admin(app)
         _seed_gpio(app)
+        if app.config.get("ENABLE_GPIO", False):
+            try:
+                from services import gpio_service
+                gpio_service.warm_output_pins()
+                app.logger.info("GPIO output pins warmed and forced inactive.")
+            except Exception as exc:
+                app.logger.warning("Failed to warm GPIO output pins: %s", exc)
         _migrate_calendar_users_to_guest(app)
         _migrate_manual_users_to_master(app)
         reed_sensor.init_app(app)

@@ -145,6 +145,19 @@ def get_all_pins() -> list[GpioPin]:
     return GpioPin.query.all()
 
 
+def warm_output_pins() -> None:
+    """Open configured output devices and force them inactive at startup."""
+    changed = False
+    for pin in GpioPin.query.filter_by(direction="output").all():
+        device = _get_or_create_device(pin.pin_number, "output")
+        device.off()
+        if pin.state:
+            pin.state = False
+            changed = True
+    if changed:
+        db.session.commit()
+
+
 def delete_pin(pin_number: int) -> None:
     """Remove configuration and release the hardware pin."""
     pin = GpioPin.query.filter_by(pin_number=pin_number).first()
