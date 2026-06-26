@@ -26,19 +26,29 @@ When you are away from the network, use **Raspberry Pi Connect** remote shell in
 
 ## 3) Update app code on the Pi
 
+Preferred production update command:
+
+```bash
+cd ~/invisible-key
+./scripts/update-production.sh
+```
+
+This script runs the same Docker production update path shown below, then prints service status and recent logs. Wait for the GitHub Actions image build to finish before running it. If you run it too early, it may pull the previous image; run it again after the action completes.
+
+Manual equivalent:
+
 ```bash
 cd ~/invisible-key
 git pull --ff-only origin main
-```
-
-## 4) Pull and restart production stack
-
-```bash
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml pull app
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d --force-recreate app
 ```
 
 Note: `docker-compose.prod.yml` uses prebuilt GHCR images. `git pull` updates compose/config files, while `pull` + `force-recreate` updates the running container image.
+
+Do not use old local scripts that run `npm run build`, `pkill -f "python app.py"`, or `python app.py` on the Pi. Those were for pre-Docker/development use and do not update the production container.
+
+## 4) Pull and restart production stack
 
 Avoid building locally on Pi 2/3 unless you have a specific reason. If you must build from source instead of pulling the GHCR image:
 
@@ -61,13 +71,36 @@ docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=3
 
 Expected: log line includes effective timezone source (for example `source=system` or `source=config`) and scheduler startup details.
 
-## 7) Verify app endpoint
+## 7) Verify GPIO startup and unlock logging
+
+For GPIO-related changes, confirm the app warmed the relay output pins and logs pulse lifecycle events:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=200 app \
+  | grep -aEi "GPIO output pins warmed|GPIO pulse start requested|GPIO pulse accepted|GPIO pulse ended|GPIO pulse failed"
+```
+
+Expected after startup:
+
+```text
+GPIO output pins warmed and forced inactive.
+```
+
+Expected after a door unlock attempt:
+
+```text
+GPIO pulse start requested: pin=17 ...
+GPIO pulse accepted: pin=17 ...
+GPIO pulse ended: pin=17 ...
+```
+
+## 8) Verify app endpoint
 
 ```bash
 curl -I http://127.0.0.1:5000
 ```
 
-## 8) Optional runtime introspection (scheduler and effective timezone)
+## 9) Optional runtime introspection (scheduler and effective timezone)
 
 ```bash
 docker exec -i invisible-key python - <<'PY'

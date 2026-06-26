@@ -125,6 +125,78 @@ cd ~/invisible-key
 docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml up -d
 ```
 
+## Unlock Button Animated But Door Did Not Unlock
+
+Current production builds only show the guest unlock animation after the GPIO pulse API returns success. If a user reports an animation without a relay click, check both access logs and audit logs before changing code or wiring.
+
+Recent app log check:
+
+```bash
+cd ~/invisible-key
+docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml logs --tail=300 app \
+  | grep -aEi "GPIO pulse|POST /api/gpio|button_press|401|403|500|failed|exception"
+```
+
+Recent audit events:
+
+```bash
+cd ~/invisible-key
+docker compose -f docker-compose.prod.yml -f docker-compose.pi.yml exec -T app python - <<'PY'
+import sqlite3
+
+db = "/app/backend/instance/data/invisible_key.db"
+con = sqlite3.connect(db)
+
+for row in con.execute("""
+    select id, event, detail, timestamp
+    from audit_logs
+    where event in ('button_press', 'gpio_pulse_started', 'gpio_pulse_ended')
+    order by id desc
+    limit 40
+"""):
+    print(row)
+PY
+```
+
+Interpretation:
+
+- No `button_press` and no `POST /api/gpio` means the browser/request did not reach the backend.
+- `POST /api/gpio/.../pulse` with `401` or `403` means auth/session/access denied.
+- `GPIO pulse start requested`, `GPIO pulse accepted`, and `GPIO pulse ended` means the backend drove the pin path successfully; check relay power, wiring, and lock hardware.
+- `GPIO pulse failed` or stack traces indicate a backend/GPIO driver problem.
+
+Also check Pi power and kernel warnings around the event time:
+
+```bash
+journalctl -p warning..alert --since "30 minutes ago" --no-pager
+dmesg -T | grep -Ei "gpio|lgpio|voltage|under-voltage|thrott|usb|brcm|error|warn" | tail -80
+vcgencmd get_throttled
+```
+
+## Production Update Script
+
+Production runs from the Docker image, not from `python app.py` on the Pi. Use:
+
+```bash
+cd ~/invisible-key
+./scripts/update-production.sh
+```
+
+If GitHub Actions is still building, this script may pull the previous image. Wait for the action to finish, then run it again.
+
+Do not use old local rebuild scripts that run `npm run build`, `pkill -f "python app.py"`, or `python app.py` for production. Replace any old script with a guard:
+
+```bash
+cd ~/invisible-key
+cat > rebuild_and_restart.sh <<'SH'
+#!/usr/bin/env bash
+echo "This script is obsolete for production."
+echo "Use: ./scripts/update-production.sh"
+exit 1
+SH
+chmod +x rebuild_and_restart.sh
+```
+
 ## Quick Health Checks
 
 Run these on the Pi, not on your laptop:
