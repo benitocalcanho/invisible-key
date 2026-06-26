@@ -52,12 +52,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import api from '../api.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const images = ref({ building_door: null, apartment_door: null })
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const DURATION = 5000  // ms — relay pulse duration for all doors
 const active = ref(null)   // 'building' | 'apartment' | null
@@ -119,7 +121,7 @@ async function unlock(door) {
   try {
     await api.post(`/gpio/pins/${pin}/pulse`, { duration: duration / 1000 })
   } catch (err) {
-    unlockError.value = err.response?.data?.error || 'Unlock failed. Try again.'
+    unlockError.value = t('unlock_failed_try_again')
     pending.value = null
     setTimeout(() => {
       if (unlockError.value) unlockError.value = ''
