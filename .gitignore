@@ -61,4 +61,5 @@ config/token.json
 # Temporary
 tmp/
 temp/
+private/
 private do not commit/

@@ -34,6 +34,7 @@ The full step-by-step version is here: [RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETU
 | [REMOTE_ACCESS.md](REMOTE_ACCESS.md) | Raspberry Pi Connect, ngrok, and Tailscale |
 | [DEPLOY_PI.md](DEPLOY_PI.md) | Update/redeploy checklist |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Emergency SSH unlock scripts, GPIO busy recovery, and health checks |
+| [PRODUCTION_ISSUES.md](PRODUCTION_ISSUES.md) | Real production incidents, evidence, and recovery notes |
 | [INSTALL_PI2B.md](INSTALL_PI2B.md) | Raspberry Pi 2 B-specific notes |
 | [INSTALL_PI3B.md](INSTALL_PI3B.md) | Raspberry Pi 3 B/B+-specific notes |
 

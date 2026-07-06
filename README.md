@@ -51,6 +51,7 @@ Useful after setup:
 - [Intercom Wiring](docs/INTERCOM.md) — relay wiring for the intercom and 12V AC apartment opener.
 - [Update Runbook](docs/DEPLOY_PI.md) — how to update the app later.
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — emergency SSH unlock scripts, GPIO busy recovery, and health checks.
+- [Production Issues Log](docs/PRODUCTION_ISSUES.md) — real incidents, evidence, and recovery commands.
 - [Raspberry Pi 2 B Notes](docs/INSTALL_PI2B.md) — 32-bit OS, USB WiFi, slower pulls.
 - [Raspberry Pi 3 B/B+ Notes](docs/INSTALL_PI3B.md) — Pi 3-specific notes.
 

@@ -59,6 +59,21 @@ def _clear_failed_logins(key) -> None:
     _failed_login_attempts.pop(key, None)
 
 
+def _failed_login_detail(username: str, password: str, *, reason: str = "invalid_credentials") -> dict:
+    password_value = password if isinstance(password, str) else ""
+    return {
+        "username": username,
+        "reason": reason,
+        "username_length": len(username),
+        "password_length": len(password_value),
+        "password_starts_with_whitespace": bool(password_value[:1].isspace()),
+        "password_ends_with_whitespace": bool(password_value[-1:].isspace()),
+        "password_has_uppercase": any(char.isupper() for char in password_value),
+        "password_has_non_ascii": any(ord(char) > 127 for char in password_value),
+        "password_has_symbol": any(not char.isalnum() and not char.isspace() for char in password_value),
+    }
+
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(silent=True) or {}
@@ -81,12 +96,16 @@ def login():
         log_event(
             "login_failed",
             user_id=user.id if user else None,
-            detail={"username": username},
+            detail=_failed_login_detail(username, password),
         )
         return jsonify({"error": "Invalid credentials."}), 401
 
     if guest_stay_has_ended(user.valid_until, app=current_app):
-        log_event("login_failed", user_id=user.id, detail={"username": username, "reason": "stay_ended"})
+        log_event(
+            "login_failed",
+            user_id=user.id,
+            detail=_failed_login_detail(username, password, reason="stay_ended"),
+        )
         return jsonify({"error": "Your stay has ended."}), 403
 
     additional_claims = {"role": user.role, "username": user.username}
