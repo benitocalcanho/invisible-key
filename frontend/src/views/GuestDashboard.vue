@@ -106,9 +106,6 @@ async function unlock(door) {
   unlockError.value = ''
   const duration = DURATION
 
-  // Fire-and-forget: log button press without blocking the unlock request.
-  api.post('/admin/audit/button_press', { button: door }).catch(() => {})
-
   // Trigger GPIO relay: building -> pin 17, apartment -> pin 27.
   // The success animation starts only after the backend accepts the pulse.
   const pinMap = { building: 17, apartment: 27 }

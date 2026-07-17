@@ -163,6 +163,11 @@ def pulse_pin(pin_number):
 
     app = current_app._get_current_object()
 
+    button_label = getattr(pin, "label", "") or f"Pin {pin_number}"
+    actor_username = user.username
+    actor_role = user.role
+    request_meta = get_request_metadata()
+
     def turn_off_later() -> None:
         time.sleep(duration)
         with app.app_context():
@@ -173,9 +178,38 @@ def pulse_pin(pin_number):
             except Exception as exc:
                 app.logger.exception("Failed to end GPIO%s pulse: %s", pin_number, exc)
 
+    def notify_unlock_later() -> None:
+        with app.app_context():
+            try:
+                from types import SimpleNamespace
+                from services.email_service import format_button_notification_body, send_notification_email
+
+                actor = SimpleNamespace(username=actor_username, role=actor_role)
+                log_event(
+                    "button_press",
+                    user_id=user_id,
+                    detail={"button": button_label, "pin": pin_number, "duration": duration},
+                )
+                subject = f"[Invisible Key] {button_label} pressed by {actor_username}"
+                body = format_button_notification_body(
+                    user=actor,
+                    button=button_label,
+                    action="Pressed",
+                    pin_number=pin_number,
+                    request_meta=request_meta,
+                )
+                send_notification_email(subject, body)
+            except Exception:
+                app.logger.exception(
+                    "Failed to send GPIO pulse notification: pin=%s user_id=%s",
+                    pin_number,
+                    user_id,
+                )
+
     threading.Thread(target=turn_off_later, daemon=True).start()
     current_app.logger.info("GPIO pulse accepted: pin=%s duration=%s", pin_number, duration)
     log_event("gpio_pulse_started", user_id=user_id, detail={"pin": pin_number, "duration": duration})
+    threading.Thread(target=notify_unlock_later, daemon=True).start()
     return jsonify({**pin.to_dict(), "pulse_duration": duration}), 200
 
 
