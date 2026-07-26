@@ -566,6 +566,11 @@ def _parse_time(time_str: str):
         return (12, 0)
 
 
+def _real_flask_app(app):
+    """Return a concrete Flask app when passed current_app or a real app."""
+    return app._get_current_object() if hasattr(app, "_get_current_object") else app
+
+
 def start_scheduler(app) -> None:
     """
     Start two daily cron jobs:
@@ -575,6 +580,7 @@ def start_scheduler(app) -> None:
     """
     global _scheduler
     try:
+        app = _real_flask_app(app)
         from apscheduler.schedulers.background import BackgroundScheduler
         from apscheduler.triggers.cron import CronTrigger
 

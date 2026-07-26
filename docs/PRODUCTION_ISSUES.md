@@ -235,3 +235,48 @@ Check listening ports:
 ```bash
 ss -ltnp | grep -E ':5000|:4040' || true
 ```
+
+## 2026-07-26 Automatic Calendar Jobs Crashed After Schedule Change
+
+### Context
+
+The admin temporarily changed check-in time from `14:00` to `13:55`, then back to `14:00`, to allow early guest access. The manual **Sync Now** button later created/updated the guest successfully, but the automatic daily jobs did not complete.
+
+Production state at diagnosis:
+
+```text
+CHECKOUT_TIME='12:00'
+CHECKIN_TIME='14:00'
+calendar guest: dirk, active, valid_until 2026-07-28
+container uptime: Up 9 days
+```
+
+### Evidence
+
+The scheduler did fire at the correct Berlin times, but both jobs crashed:
+
+```text
+2026-07-26 10:00:00 UTC Running job checkout_guests scheduled at 12:00 CEST
+RuntimeError: Working outside of application context
+
+2026-07-26 12:00:00 UTC Running job sync_calendar scheduled at 14:00 CEST
+RuntimeError: Working outside of application context
+```
+
+Cause:
+
+`start_scheduler(current_app)` could store Flask's `current_app` proxy in APScheduler job args. When APScheduler executed the job later outside a Flask request/app context, the proxy was unbound and `app.app_context()` failed.
+
+### Recovery
+
+Manual **Sync Now** from the admin dashboard still works because it runs inside an active Flask request context.
+
+If this happens before the fix is deployed, use:
+
+```text
+Admin Dashboard -> Calendar Sync -> Sync Now
+```
+
+### Fix
+
+`start_scheduler(app)` now resolves Flask `LocalProxy` objects immediately and schedules jobs with the concrete Flask app object. This keeps scheduled checkout and check-in jobs independent of the request context that restarted the scheduler.
